@@ -5,27 +5,38 @@ open ProviderImplementation.ProvidedTypes
 open FSharp.Quotations
 open FSharp.Core.CompilerServices
 open System.Reflection
+open Newtonsoft.Json
 open Newtonsoft.Json.Linq
 
 [<TypeProvider>]
-type ComboGenerativeProvider (config : TypeProviderConfig) as this =
+type JsonProvider (config : TypeProviderConfig) as this =
     inherit TypeProviderForNamespaces (config)
 
-    let ns = "JsonProvider"
+    let ns = "Liminiens.JsonProvider"
     let asm = Assembly.GetExecutingAssembly()
 
-    let buildTypes (typeName: string) (args: obj[]) =
+    let buildStaticParameters (typeName: string) (args: obj[]) =
+        let providedType = ProvidedTypeDefinition(asm, ns, typeName, baseType = Some typeof<obj>)
         let sample = (args.[0] :?> string) |> JObject.Parse
-        for property in (sample :> JToken) do
-            ()
-        ProvidedTypeDefinition(asm, ns, typeName, baseType = Some typeof<obj>)
+        let parseMethod = 
+            ProvidedMethod(
+                methodName = "Parse", 
+                parameters = [ProvidedParameter("input", typeof<string>)], 
+                returnType = providedType.AsType(), 
+                isStatic = true,
+                invokeCode = fun args -> <@@ JsonConvert.DeserializeObject(%%args.[0], providedType.AsType()) @@>) 
+
+        parseMethod.AddXmlDoc "Deserializes JSON input string"
+
+        providedType.AddMember parseMethod
+        providedType
     
-    let parameters = 
+    let staticParameters = 
         [ ProvidedStaticParameter("Sample", typeof<string>, parameterDefaultValue = "") ] 
     
     let generatedType = 
         let providedType = ProvidedTypeDefinition(asm, ns, "JsonProvider", baseType = Some typeof<obj>)
-        providedType.DefineStaticParameters(parameters, buildTypes)
+        providedType.DefineStaticParameters(staticParameters, buildStaticParameters)
         providedType
     do
        this.AddNamespace(ns, [generatedType])

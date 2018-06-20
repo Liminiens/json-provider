@@ -14,8 +14,13 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Reference Include="JsonProvider">
+      <HintPath>..\..\src\JsonProvider\output\JsonProvider.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Update="FSharp.Core" Version="4.5.0" />
     <PackageReference Update="System.ValueTuple" Version="4.5.0" />
   </ItemGroup>
-
 </Project>
