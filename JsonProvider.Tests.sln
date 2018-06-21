@@ -3,6 +3,11 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
 VisualStudioVersion = 15.0.27703.2026
 MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".paket", ".paket", "{34B44F76-D2FF-438A-846F-85E09F35B7D3}"
+	ProjectSection(SolutionItems) = preProject
+		paket.dependencies = paket.dependencies
+	EndProjectSection
+EndProject
 Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "JsonProvider.Tests", "tests\JsonProvider.Tests\JsonProvider.Tests.fsproj", "{D7BDE66F-1555-41C5-A6A0-4015696A2F0C}"
 EndProject
 Global

@@ -124,7 +124,7 @@
     "System.ValueTuple/4.5.0": {
       "type": "package",
       "serviceable": true,
-      "sha512": "sha512-xZtSZNEHGa+tGsKuP4sh257vxJ/yemShz4EusmomkynMzuEDDjVaErBNewpzEF6swUgbcrSQAX3ELsEp1zCOwA==",
+      "sha512": "sha512-hNJdiFGQUS7wWGlpUEO00TKULe8srikTRS5PuuL7Xbj5Mgzl/0ydDODYC3wi+DZCFBK+q+svoilJDjUTWVV48g==",
       "path": "system.valuetuple/4.5.0",
       "hashPath": "system.valuetuple.4.5.0.nupkg.sha512"
     }
