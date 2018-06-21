@@ -14,34 +14,37 @@ type JsonProvider (config : TypeProviderConfig) as this =
     
     let ns = "Liminiens.JsonProvider"    
     let asm = Assembly.GetExecutingAssembly()
+    
+    let sampleType = ProvidedTypeDefinition(asm, ns, "Sample", baseType = Some typeof<obj>, isErased = false)
 
     let buildStaticParameters (typeName: string) (args: obj[]) =
         let asm = ProvidedAssembly()
-        let providedType = ProvidedTypeDefinition(asm, ns, typeName, baseType = Some typeof<obj>)
         let sample = (args.[0] :?> string) |> JObject.Parse
+
+        let providedType = ProvidedTypeDefinition(asm, ns, typeName, baseType = Some typeof<obj>, isErased = false)
+
         let parseMethod = 
             ProvidedMethod(
                 methodName = "Parse", 
                 parameters = [ProvidedParameter("input", typeof<string>)], 
-                returnType = providedType.AsType(), 
+                returnType = sampleType.AsType(), 
                 isStatic = true,
-                invokeCode = fun args -> <@@ JsonConvert.DeserializeObject(%%args.[0], providedType.AsType()) @@>) 
-
+                invokeCode = fun args -> <@@ JsonConvert.DeserializeObject(%%args.[0], sampleType.AsType()) @@>) 
         parseMethod.AddXmlDoc "Deserializes JSON input string"
-
         providedType.AddMember parseMethod
+
         providedType
     
     let staticParameters = 
         [ ProvidedStaticParameter("Sample", typeof<string>, parameterDefaultValue = "") ] 
     
     let generatedType = 
-        let providedType = ProvidedTypeDefinition(asm, ns, "JsonProvider", baseType = Some typeof<obj>)
+        let providedType = ProvidedTypeDefinition(asm, ns, "JsonProvider", baseType = Some typeof<obj>, isErased = false)
         providedType.DefineStaticParameters(staticParameters, buildStaticParameters)
         providedType
         
     do
-       this.AddNamespace(ns, [generatedType])
+       this.AddNamespace(ns, [generatedType; sampleType])
 
 (*
 type SomeRuntimeHelper() = 

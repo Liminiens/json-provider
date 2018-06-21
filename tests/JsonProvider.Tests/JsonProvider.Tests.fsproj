@@ -11,7 +11,7 @@
   </ItemGroup>
   <ItemGroup>
     <Reference Include="JsonProvider">
-      <HintPath>..\..\src\JsonProvider\bin\Debug\netstandard2.0\JsonProvider.dll</HintPath>
+      <HintPath>test\JsonProvider.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>
