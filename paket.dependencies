@@ -1,5 +1,4 @@
-source http://applicationserver.localnet:8081/repository/nuget-hosted/
-source http://applicationserver.localnet:8081/repository/nuget.org-proxy/
+source https://api.nuget.org/v3/index.json
 
 nuget FSharp.Core 4.3.4
 nuget Newtonsoft.Json 11.0.2
