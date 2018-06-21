@@ -17,6 +17,5 @@ module Generator =
        seq {
             for property in jobj do
                 ()
-                //yield ProvidedProperty("Property_" + property.na, typeof<int>, getterCode = fun args -> <@@ i @@>)
        }
     

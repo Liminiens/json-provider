@@ -1,7 +1,7 @@
 source http://applicationserver.localnet:8081/repository/nuget-hosted/
 source http://applicationserver.localnet:8081/repository/nuget.org-proxy/
 
-nuget FSharp.Core 4.5.0
+nuget FSharp.Core 4.3.4
 nuget Newtonsoft.Json 11.0.2
 nuget System.ValueTuple 4.5.0
 nuget xunit 2.3.1

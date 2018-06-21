@@ -27,10 +27,15 @@
     </None>
   </ItemGroup>
   <ItemGroup>
-    <CopyItems Include="$(TargetDir)\*.*" />
+    <PackageReference Update="FSharp.Core" Version="4.3.4" />
   </ItemGroup>
+  <!--
   <Target Name="CopyTarget" AfterTargets="Build">
-    <Copy SourceFiles="@(CopyItems)" DestinationFolder="$(ProjectDir)output" />
-  </Target>
+    <ItemGroup>
+      <CopyItems Include="$(OutDir)\**\*" />
+    </ItemGroup>
+    <Message Text="Copying: @(CopyItems)" Importance="high" />
+    <Copy SourceFiles="@(CopyItems)" DestinationFolder="$(ProjectDir)output\%(RecursiveDir)" OverwriteReadOnlyFiles="true" />
+  </Target>-->
   <Import Project="..\..\.paket\Paket.Restore.targets" />
 </Project>

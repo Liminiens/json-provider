@@ -2,6 +2,8 @@
 
 open System
 
+open Liminiens.JsonProvider
+
 [<EntryPoint>]
 let main argv =
     printfn "Hello World from F#!"
