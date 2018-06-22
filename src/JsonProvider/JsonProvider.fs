@@ -15,7 +15,7 @@ type JsonProvider (config : TypeProviderConfig) as this =
     let ns = "Liminiens.JsonProvider"    
     let asm = Assembly.GetExecutingAssembly()
     
-    let sampleType = ProvidedTypeDefinition(asm, ns, "Sample", baseType = Some typeof<obj>, isErased = false)
+    let sampleType = ProvidedTypeDefinition(asm, ns, "Data", baseType = Some typeof<obj>, isErased = false)
 
     let buildStaticParameters (typeName: string) (args: obj[]) =
         let asm = ProvidedAssembly()

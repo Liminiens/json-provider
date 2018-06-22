@@ -1,16 +1,22 @@
 ﻿namespace JsonProvider
 
+open System.Globalization
 open ProviderImplementation
 open ProviderImplementation.ProvidedTypes
 open Newtonsoft.Json.Linq
 
 module Generator =
+    open System
+
+    type JsonValue =
+        | String of string
+        | Float of decimal
+
     type JsonTokenType = 
         | Object of JObject
         | Property of JProperty
         | Array of JArray
-        | FloatValue of decimal
-        | StringValue of string
+        | Value of JsonValue
 
     let readToken (jToken: JToken) = 
         match jToken.Type with
@@ -21,40 +27,74 @@ module Generator =
         | JTokenType.Array -> 
             Array(jToken :?> JArray)
         | JTokenType.Float -> 
-            FloatValue(jToken.Value<decimal>())
+            Value(Float(jToken.Value<decimal>()))
         | _ -> 
-            StringValue(jToken.Value<string>())
+            Value(String(jToken.Value<string>()))
     
     let getRootToken str = 
         JObject.Parse(str).Root
-
-    let iterOver (jObject: JObject) = 
-        let directTokens = jObject.Children() |> List.ofSeq
-        for token in directTokens do
-            ()
     
-    let createSampleType (asm: ProvidedAssembly) ns sample =
+    let initCap (str: string) = 
+        CultureInfo.CurrentCulture.TextInfo.ToTitleCase(str.ToLower())
+    
+    type GeneratedProvidedProperty =
+        | GeneratedProperty of ProvidedProperty option
+        | GeneratedPropertyDelegate of (Type -> ProvidedProperty)
+
+    type GeneratedProvidedType = { ProvidedType: ProvidedTypeDefinition; ProvidedProperty: GeneratedProvidedProperty }
+        
+    let createSampleType (asm: ProvidedAssembly) ns sample =      
+       let createType typeName =
+            ProvidedTypeDefinition(asm, ns, typeName, baseType = Some typeof<obj>, isErased = false)
+       
+       let createProperty propertyName propertyType= 
+            ProvidedProperty(propertyName, propertyType)
+       
+       let getTokenType token = 
+            match token with
+            | String(_) ->
+                typeof<string>
+            | Float(_) ->
+                typeof<decimal>
+
        let mainTypeName = "ProvidedSampleType"
        let rootToken = getRootToken sample
-       let mainType = 
-            ProvidedTypeDefinition(asm, ns, "ProvidedSampleType", baseType = Some typeof<obj>, isErased = false)
-       let createType typeCount =
-            ProvidedTypeDefinition(asm, ns, sprintf "ProvidedSampleType%i" typeCount, baseType = Some typeof<obj>, isErased = false)
+
+       let mainType = createType mainTypeName
        
-       let createTypes token (providedType: ProvidedTypeDefinition) (typeCount: int) =
-            match readToken token with
-            | Object(jObject) ->
-                let newType = createType typeCount
-                let property = ProvidedProperty(newType.Name, newType.AsType())
-                newType.AddMember property
-                ()
+       let rec createTypes (generatedType: GeneratedProvidedType) token =
+            match readToken token with            
             | Property(jProperty) ->
-                ()
+                for childToken in jProperty do
+                    match childToken.Type with
+                    | JTokenType.Object ->
+                        let name = jProperty.Name
+                        //create new type
+                        let propertyType = createType name
+                        let providedProperty = createProperty name (propertyType.AsType())
+                        generatedType.ProvidedType.AddMember providedProperty
+
+                        let objectType = { ProvidedType = propertyType; ProvidedProperty = GeneratedProperty(Some providedProperty) }
+                        createTypes objectType childToken
+                    | _ ->
+                        let propertyDelegate = 
+                            let name = jProperty.Name
+                            (fun typeObj -> createProperty name typeObj)
+
+                        let generatedType = {generatedType with ProvidedProperty = GeneratedPropertyDelegate(propertyDelegate)}
+                        createTypes generatedType childToken
+            | Object(jObject) ->
+                jObject |> Seq.iter (createTypes generatedType)
             | Array(jArray) ->
-                ()
-            | FloatValue(fValue) ->
-                ()
-            | StringValue(sValue) ->
-                ()
-       ()
+                if jArray.Count > 0 then
+                    let firstToken = jArray |> Seq.take 1
+                    for childToken in (jArray |> Seq.skip 1) do
+                        ()
+            | Value(value) ->
+                match generatedType.ProvidedProperty with
+                | GeneratedPropertyDelegate(propGenerateFunc) ->
+                    propGenerateFunc(getTokenType value) |> generatedType.ProvidedType.AddMember 
+                | _ ->
+                    failwith "Expected property delegate"           
+       mainType
     
