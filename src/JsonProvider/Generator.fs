@@ -16,7 +16,7 @@ module Generator =
         | Object of JObject
         | Property of JProperty
         | Array of JArray
-        | Value of JsonValue
+        | Value of Type
 
     let readToken (jToken: JToken) = 
         match jToken.Type with
@@ -27,9 +27,9 @@ module Generator =
         | JTokenType.Array -> 
             Array(jToken :?> JArray)
         | JTokenType.Float -> 
-            Value(Float(jToken.Value<decimal>()))
+            Value(typeof<decimal>)
         | _ -> 
-            Value(String(jToken.Value<string>()))
+            Value(typeof<string>)
     
     let getRootToken str = 
         JObject.Parse(str).Root
@@ -38,10 +38,15 @@ module Generator =
         CultureInfo.CurrentCulture.TextInfo.ToTitleCase(str.ToLower())
     
     type GeneratedProvidedProperty =
-        | GeneratedProperty of ProvidedProperty option
+        | GeneratedProperty of ProvidedProperty
         | GeneratedPropertyDelegate of (Type -> ProvidedProperty)
-
-    type GeneratedProvidedType = { ProvidedType: ProvidedTypeDefinition; ProvidedProperty: GeneratedProvidedProperty }
+    
+    type ArrayTypes = ProvidedTypeDefinition list
+    
+    type GeneratorWorkUnit = { 
+        ProvidedType: ProvidedTypeDefinition; 
+        ProvidedProperty: GeneratedProvidedProperty;
+        }
         
     let createSampleType (asm: ProvidedAssembly) ns sample =      
        let createType typeName =
@@ -49,22 +54,14 @@ module Generator =
        
        let createProperty propertyName propertyType= 
             ProvidedProperty(propertyName, propertyType)
-       
-       let getTokenType token = 
-            match token with
-            | String(_) ->
-                typeof<string>
-            | Float(_) ->
-                typeof<decimal>
 
        let mainTypeName = "ProvidedSampleType"
        let rootToken = getRootToken sample
 
        let mainType = createType mainTypeName
        
-       let rec createTypes (generatedType: GeneratedProvidedType) token =
-            match readToken token with            
-            | Property(jProperty) ->
+       let rec createTypes (generatedType: GeneratorWorkUnit) token =        
+            let createTypeProperty (jProperty: JProperty) = 
                 for childToken in jProperty do
                     match childToken.Type with
                     | JTokenType.Object ->
@@ -74,7 +71,7 @@ module Generator =
                         let providedProperty = createProperty name (propertyType.AsType())
                         generatedType.ProvidedType.AddMember providedProperty
 
-                        let objectType = { ProvidedType = propertyType; ProvidedProperty = GeneratedProperty(Some providedProperty) }
+                        let objectType = { ProvidedType = propertyType; ProvidedProperty = GeneratedProperty(providedProperty) }
                         createTypes objectType childToken
                     | _ ->
                         let propertyDelegate = 
@@ -83,18 +80,31 @@ module Generator =
 
                         let generatedType = {generatedType with ProvidedProperty = GeneratedPropertyDelegate(propertyDelegate)}
                         createTypes generatedType childToken
-            | Object(jObject) ->
+            
+            let createObjectType jObject =
                 jObject |> Seq.iter (createTypes generatedType)
-            | Array(jArray) ->
+            
+            let initTypeProperty value workUnit =
+                match workUnit.ProvidedProperty with
+                    | GeneratedPropertyDelegate(propertyInitFunc) ->
+                        propertyInitFunc value |> workUnit.ProvidedType.AddMember 
+                    | _ ->
+                        failwith "Expected property delegate"           
+            
+            let createArrayType (jArray: JArray) =
                 if jArray.Count > 0 then
                     let firstToken = jArray |> Seq.take 1
                     for childToken in (jArray |> Seq.skip 1) do
                         ()
+
+            match readToken token with            
+            | Property(jProperty) ->
+                createTypeProperty jProperty
+            | Object(jObject) ->
+                createObjectType jObject
+            | Array(jArray) ->
+                createArrayType jArray
             | Value(value) ->
-                match generatedType.ProvidedProperty with
-                | GeneratedPropertyDelegate(propGenerateFunc) ->
-                    propGenerateFunc(getTokenType value) |> generatedType.ProvidedType.AddMember 
-                | _ ->
-                    failwith "Expected property delegate"           
+                initTypeProperty value generatedType         
        mainType
     
