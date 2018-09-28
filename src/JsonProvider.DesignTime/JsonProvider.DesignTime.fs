@@ -19,7 +19,7 @@ module internal Helpers =
 type BasicGenerativeProvider (config : TypeProviderConfig) as this =
     inherit TypeProviderForNamespaces (config, assemblyReplacementMap=[("BasicGenerativeProvider.DesignTime", "JsonProvider")])
 
-    let ns = "JsonProvider"
+    let ns = "FSharp.Liminiens.JsonProvider"
     let asm = Assembly.GetExecutingAssembly()
 
     // check we contain a copy of runtime files, and are not referencing the runtime DLL
