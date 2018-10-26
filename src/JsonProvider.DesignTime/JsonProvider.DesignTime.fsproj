@@ -19,12 +19,17 @@
       <Link>paket-files/ProvidedTypes.fs</Link>
     </Compile>
     <Compile Include="AssemblyInfo.fs" />
+    <Compile Include="TypeProviderHelpers.fs" />
+    <Compile Include="TypeInference.fs" />
     <Compile Include="..\JsonProvider.Runtime\JsonProvider.Runtime.fs" />
     <Compile Include="JsonProvider.DesignTime.fs" />
     <None Include="paket.references" />
     <None Include="..\..\packages\NetStandard.Library.NetFramework\build\net461\lib\netstandard.dll" Condition="'$(TargetFramework)' == 'net45'">
         <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Newtonsoft.Json" Version="11.0.2" />
   </ItemGroup>
   <Import Project="..\..\.paket\Paket.Restore.targets" />
 </Project>

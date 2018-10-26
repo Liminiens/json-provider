@@ -1,4 +1,4 @@
-namespace MyNamespace
+namespace FSharp.Liminiens.JsonProvider
 
 open System
 

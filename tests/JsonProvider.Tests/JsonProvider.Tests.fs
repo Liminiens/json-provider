@@ -1,23 +1,15 @@
 module JsonProviderTests
 
 
-open MyNamespace
+open FSharp.Liminiens.JsonProvider
 open NUnit.Framework
 
-type Generative2 = JsonProvider.GenerativeProvider<2>
-type Generative4 = JsonProvider.GenerativeProvider<4>
+
+type JsonGenerativeProviderTest = JsonGenerativeProvider<"""{ "data": [1,2] }""">
 
 [<Test>]
-let ``Can access properties of generative provider 2`` () =
+let ``BasicTest`` () =
     let obj = Generative2()
     Assert.AreEqual(obj.Property1, 1)
-    Assert.AreEqual(obj.Property2, 2)
-
-[<Test>]
-let ``Can access properties of generative provider 4`` () =
-    let obj = Generative4()
-    Assert.AreEqual(obj.Property1, 1)
-    Assert.AreEqual(obj.Property2, 2)
-    Assert.AreEqual(obj.Property3, 3)
-    Assert.AreEqual(obj.Property4, 4)
+    Assert.AreEqual(obj.Property2, 2)  
 
