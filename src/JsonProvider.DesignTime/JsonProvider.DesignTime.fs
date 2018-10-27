@@ -14,25 +14,35 @@ open Newtonsoft.Json.Linq
 
 // Put any utility helpers here
 
-
 [<TypeProvider>]
-type BasicGenerativeProvider (config : TypeProviderConfig) as this =
-    inherit TypeProviderForNamespaces (config, assemblyReplacementMap=[("JsonProvider.DesignTime", "JsonProvider")])
+type JsonProvider (config : TypeProviderConfig) as this =
+    inherit TypeProviderForNamespaces (config, assemblyReplacementMap=[("JsonProvider.DesignTime", "JsonProvider")]) 
 
-    let providerTypeName = "JsonGenerativeProvider"
+    let providerTypeName = "JsonProvider"
     let ns = "FSharp.Liminiens.JsonProvider"
     let asm = Assembly.GetExecutingAssembly()
 
     // check we contain a copy of runtime files, and are not referencing the runtime DLL
-    do assert (typeof<DataSource>.Assembly.GetName().Name = asm.GetName().Name)  
+    do assert (typeof<Marker>.Assembly.GetName().Name = asm.GetName().Name)  
 
     let buildStaticParameters (typeName: string) (args: obj[]) =
         let sample = args.[0] :?> string
         let sampleObject = JObject.Parse sample
 
-        let sampleType = TypeInference.inferType sampleObject.Root asm ns //todo
-
+        //let sampleType = listType typeof<string>
+        let (sampleType, store) = TypeInference.inferType sampleObject.Root asm ns
+        this.AddNamespace(store.Namespace, store.GetTypes())
         let staticPropertyType = createType asm ns typeName
+        this.AddNamespace(store.Namespace, [staticPropertyType])
+        //this.AddNamespace(ns, [staticPropertyType])   
+        let sampleProperty = 
+            ProvidedProperty(
+                propertyName = "Value", 
+                propertyType = sampleType, 
+                isStatic = true,
+                getterCode = fun _ -> <@@ JsonConvert.DeserializeObject(sample, sampleType) @@>)
+        sampleProperty.AddXmlDoc("Gets the sample data value")
+        staticPropertyType.AddMember(sampleProperty)
 
         let parseMethod = 
             ProvidedMethod(
@@ -42,15 +52,8 @@ type BasicGenerativeProvider (config : TypeProviderConfig) as this =
                 isStatic = true,
                 invokeCode = 
                     fun args -> <@@ JsonConvert.DeserializeObject((%%args.[0] : string), sampleType) @@>) 
-        let sampleValue = JsonConvert.DeserializeObject(sample, sampleType)
-        let prop = 
-            ProvidedProperty(
-                propertyName = "Sample", 
-                propertyType = sampleType, 
-                getterCode = fun args -> <@@ sampleValue @@>)
-        prop.AddXmlDoc(sprintf @"Gets the sample data value")
         parseMethod.AddXmlDoc "Deserializes JSON input string"
-        staticPropertyType.AddMember parseMethod
+        staticPropertyType.AddMember(parseMethod)
 
         staticPropertyType
 
@@ -58,7 +61,7 @@ type BasicGenerativeProvider (config : TypeProviderConfig) as this =
         [ ProvidedStaticParameter("Sample", typeof<string>, parameterDefaultValue = "") ] 
     
     let generatedType = 
-        let providedType = ProvidedTypeDefinition(asm, ns, providerTypeName, baseType = Some typeof<obj>, isErased = false)
+        let providedType = createType asm ns providerTypeName
         providedType.DefineStaticParameters(staticParameters, buildStaticParameters)
         providedType
     do

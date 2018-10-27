@@ -17,5 +17,5 @@ module internal TypeProviderHelpers =
     let initCap (str: string) = 
         CultureInfo.CurrentCulture.TextInfo.ToTitleCase(str.ToLower())    
     
-    let arrayType ty = typedefof<array<_>>.MakeGenericType[| ty |]
+    let listType ty = typedefof<System.Collections.Generic.List<_>>.MakeGenericType[| ty |]
 

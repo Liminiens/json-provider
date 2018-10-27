@@ -3,6 +3,7 @@ NUGET
   remote: https://www.nuget.org/api/v2
     FSharp.Core (4.3.4)
     NETStandard.Library.NETFramework (2.0.0-preview2-25405-01)
+    Newtonsoft.Json (11.0.2)
 GITHUB
   remote: fsprojects/FSharp.TypeProviders.SDK
     src/ProvidedTypes.fs (7d57cd409d7299592822713195924e42b2b7acde)
