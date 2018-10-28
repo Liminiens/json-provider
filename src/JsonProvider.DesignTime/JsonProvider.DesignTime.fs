@@ -11,16 +11,19 @@ open ProviderImplementation
 open ProviderImplementation.ProvidedTypes
 open Newtonsoft.Json
 open Newtonsoft.Json.Linq
+open System.Diagnostics
 
 // Put any utility helpers here
 
 [<TypeProvider>]
 type JsonProvider (config : TypeProviderConfig) as this =
-    inherit TypeProviderForNamespaces (config, assemblyReplacementMap=[("JsonProvider.DesignTime", "JsonProvider")]) 
+    inherit TypeProviderForNamespaces (config, assemblyReplacementMap=[("JsonProvider.DesignTime", "JsonProvider")])
 
     let providerTypeName = "JsonProvider"
     let ns = "FSharp.Liminiens.JsonProvider"
     let asm = Assembly.GetExecutingAssembly()
+
+    do asm.Location |> Path.GetDirectoryName |> this.RegisterProbingFolder
 
     // check we contain a copy of runtime files, and are not referencing the runtime DLL
     do assert (typeof<Marker>.Assembly.GetName().Name = asm.GetName().Name)  
@@ -28,7 +31,7 @@ type JsonProvider (config : TypeProviderConfig) as this =
     let buildStaticParameters (typeName: string) (args: obj[]) =
         let sample = args.[0] :?> string
         let sampleObject = JObject.Parse sample
-
+        
         //let sampleType = listType typeof<string>
         let (sampleType, store) = TypeInference.inferType sampleObject.Root asm ns
         this.AddNamespace(store.Namespace, store.GetTypes())

@@ -113,7 +113,7 @@ module TypeInference =
                     | _ ->
                         []*)
                 let inferredType = processToken largestToken (Some(generatedType))
-                listType inferredType
+                arrayType inferredType
             | Value(value) ->
                 match value with
                 | String ->

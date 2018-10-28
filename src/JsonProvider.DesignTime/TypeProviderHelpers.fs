@@ -1,5 +1,6 @@
 ﻿namespace FSharp.Liminiens.JsonProvider
 
+open System
 open System.Reflection
 open ProviderImplementation
 open ProviderImplementation.ProvidedTypes
@@ -17,5 +18,5 @@ module internal TypeProviderHelpers =
     let initCap (str: string) = 
         CultureInfo.CurrentCulture.TextInfo.ToTitleCase(str.ToLower())    
     
-    let listType ty = typedefof<System.Collections.Generic.List<_>>.MakeGenericType[| ty |]
+    let arrayType (ty: Type) = ty.MakeArrayType()
 
