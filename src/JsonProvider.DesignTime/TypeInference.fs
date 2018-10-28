@@ -10,6 +10,24 @@ module TypeInference =
     open ProviderImplementation
     open ProviderImplementation.ProvidedTypes
     open System.Collections.Generic
+    open System.IO
+    open System.Reflection
+    open System.Diagnostics
+    
+    let log =
+        #if DEBUG
+        let file = sprintf """C:\Users\hapin\Documents\Programming\json-provider\log.txt"""
+        fun (str: string) -> 
+            if File.Exists(file) 
+                then
+                    use stream = new StreamWriter(File.OpenWrite(file))
+                    stream.WriteLine(str) 
+                else
+                    use stream = new StreamWriter(File.Create(file))
+                    stream.WriteLine(str)
+        #else
+        fun (str: string) -> ()
+        #endif
 
     type TypeStore(typesNamespace: string) =
         let store = new List<ProvidedTypeDefinition>()
@@ -18,7 +36,7 @@ module TypeInference =
 
         member this.AddType(typ) = 
             store.Add(typ)
-        
+
         member this.GetTypes() =
             store |> List.ofSeq
 
@@ -40,6 +58,7 @@ module TypeInference =
             Property(jToken :?> JProperty)
         | JTokenType.Array -> 
             Array(jToken :?> JArray)
+        | JTokenType.Integer
         | JTokenType.Float -> 
             Value(Float)
         | _ -> 
@@ -55,8 +74,9 @@ module TypeInference =
 
     let getUniqueProviderName = getUniqueName "TypeProvider"
 
+
     let inferType root asm ns =      
-        let typens = ns // sprintf "%s.%s" ns (getUniqueProviderName())
+        let typens = sprintf "%s.%s" ns (getUniqueProviderName())
         let store = TypeStore(typens)
 
         let getOrCreateTypeDefinition (generatedType: ProvidedTypeDefinition option) nameCreator =
@@ -80,29 +100,45 @@ module TypeInference =
             | None ->
                 nameCreator()
 
-        let rec processToken token (generatedType: ProvidedTypeDefinition option) = 
+        let rec processToken token (rootGeneratedType: ProvidedTypeDefinition option, generatedType: ProvidedTypeDefinition option) =
             match readToken token with
             | Property(jProperty) ->                 
                 let name = initCap jProperty.Name
+                log <| sprintf "Property name: %s" name
                 let generatedType = 
                     getOrCreateTypeDefinition generatedType (fun _ -> name)
-                let inferredType = processToken jProperty.First (Some(generatedType))
+                log <| sprintf "Property type parent name: %s" generatedType.FullName
+                let (root, inferredType) = processToken jProperty.First (rootGeneratedType, Some(generatedType))
                 let property = createProperty name inferredType 
+                log <| sprintf "Property inferred type name: %s" inferredType.FullName
                 generatedType.AddMember(property)
-                generatedType.AsType()
-            | Object(jObject) ->
+                (rootGeneratedType, generatedType.AsType())
+            | Object(jObject) ->       
+                
                 let typeName =
-                    getOrCreateNameFromParent jObject getUniqueTypeName
+                    getOrCreateNameFromParent jObject getUniqueTypeName                   
+                log <| sprintf "Object type name: %s" typeName
                 let generatedType = 
-                    getOrCreateTypeDefinition None (fun _ -> typeName) 
+                    getOrCreateTypeDefinition None (fun _ -> typeName)
+                    
+                log <| sprintf "Object generatedTypeName name: %s" generatedType.FullName
+                let rootType = 
+                    match rootGeneratedType with
+                    | None ->
+                        log <| sprintf "Object root generatedTypeName name: %s" generatedType.FullName
+                        generatedType
+                    | Some (typ) ->
+                        typ
                 jObject
-                |> Seq.iter (fun prop -> processToken prop (Some(generatedType)) |> ignore)
-                generatedType.AsType()
+                |> Seq.iter (fun prop -> processToken prop (Some(rootType), Some(generatedType)) |> ignore)
+                (Some(rootType), generatedType.AsType())
             | Array(jArray) ->
                 let typeName =
-                    getOrCreateNameFromParent jArray getUniqueTypeName        
+                    getOrCreateNameFromParent jArray getUniqueTypeName  
+                log <| sprintf "Array typeName name: %s" typeName      
                 let generatedType = 
                     getOrCreateTypeDefinition generatedType (fun _ -> typeName) 
+                log <| sprintf "Array typeName name: %s" typeName      
                 let largestToken = jArray |> Seq.maxBy (fun el -> el.Count())
                 (*let propertyNames = 
                     match readToken largestToken with
@@ -112,13 +148,14 @@ module TypeInference =
                         |> List.ofSeq
                     | _ ->
                         []*)
-                let inferredType = processToken largestToken (Some(generatedType))
-                arrayType inferredType
+                let (root, inferredType) = processToken largestToken (rootGeneratedType, Some(generatedType))
+                log <| sprintf "Array inferredType name: %s" inferredType.FullName      
+                (rootGeneratedType, arrayType inferredType)
             | Value(value) ->
                 match value with
                 | String ->
-                    typeof<string>
+                    (rootGeneratedType, typeof<string>)
                 | Float ->
-                    typeof<decimal>
+                     (rootGeneratedType, typeof<decimal>)
 
-        (processToken root None, store)
+        (processToken root (None, None), store)

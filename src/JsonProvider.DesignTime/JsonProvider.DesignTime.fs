@@ -32,12 +32,11 @@ type JsonProvider (config : TypeProviderConfig) as this =
         let sample = args.[0] :?> string
         let sampleObject = JObject.Parse sample
         
-        //let sampleType = listType typeof<string>
-        let (sampleType, store) = TypeInference.inferType sampleObject.Root asm ns
-        this.AddNamespace(store.Namespace, store.GetTypes())
-        let staticPropertyType = createType asm ns typeName
-        this.AddNamespace(store.Namespace, [staticPropertyType])
-        //this.AddNamespace(ns, [staticPropertyType])   
+        let ((sampleType, _), store) = TypeInference.inferType sampleObject.Root asm ns
+        let sampleType = Option.get sampleType
+        let staticPropertyType = createType asm store.Namespace typeName
+        this.AddNamespace(store.Namespace, (store.GetTypes()) @ [staticPropertyType])
+
         let sampleProperty = 
             ProvidedProperty(
                 propertyName = "Value", 
@@ -54,7 +53,7 @@ type JsonProvider (config : TypeProviderConfig) as this =
                 returnType = sampleType, 
                 isStatic = true,
                 invokeCode = 
-                    fun args -> <@@ JsonConvert.DeserializeObject((%%args.[0] : string), sampleType) @@>) 
+                    fun args -> <@@ JsonConvert.DeserializeObject(sample, sampleType) @@>) 
         parseMethod.AddXmlDoc "Deserializes JSON input string"
         staticPropertyType.AddMember(parseMethod)
 

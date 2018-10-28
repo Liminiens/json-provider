@@ -3,9 +3,10 @@ module JsonProviderTests
 open FSharp.Liminiens.JsonProvider
 open NUnit.Framework
 
-//type Test = JsonProvider<"""{"data": [1,2,3] }""">
+type TestTyp = JsonProvider<"""{"dat": "6" }""">
 
 [<Test>]
 let ``BasicTest`` () =
+    //TestTyp.Value1
     ()
 

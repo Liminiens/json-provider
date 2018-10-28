@@ -10,7 +10,7 @@ module internal TypeProviderHelpers =
     open System.Globalization
 
     let createType (asm: Assembly) ns typeName =
-        ProvidedTypeDefinition(asm, ns, typeName, baseType = Some typeof<obj>, isErased = false)
+        ProvidedTypeDefinition(asm, ns, typeName, baseType = Some typeof<obj>, isErased = false, isSealed = false)
        
     let createProperty propertyName propertyType = 
         ProvidedProperty(propertyName, propertyType)
