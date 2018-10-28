@@ -16,15 +16,10 @@ module TypeInference =
     
     let log =
         #if DEBUG
-        let file = sprintf """C:\Users\hapin\Documents\Programming\json-provider\log.txt"""
-        fun (str: string) -> 
-            if File.Exists(file) 
-                then
-                    use stream = new StreamWriter(File.OpenWrite(file))
-                    stream.WriteLine(str) 
-                else
-                    use stream = new StreamWriter(File.Create(file))
-                    stream.WriteLine(str)
+        let home = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile)
+        let log = Path.Combine(home, "jsoninference_log.txt")    
+        fun (msg: string) -> 
+            File.AppendAllLines(log, [msg])
         #else
         fun (str: string) -> ()
         #endif
@@ -74,10 +69,8 @@ module TypeInference =
 
     let getUniqueProviderName = getUniqueName "TypeProvider"
 
-
-    let inferType root asm ns =      
-        let typens = sprintf "%s.%s" ns (getUniqueProviderName())
-        let store = TypeStore(typens)
+    let inferType root (asm: ProvidedAssembly) ns =      
+        let typens = ns //sprintf "%s.%s" ns (getUniqueProviderName())
 
         let getOrCreateTypeDefinition (generatedType: ProvidedTypeDefinition option) nameCreator =
             match generatedType with 
@@ -86,7 +79,8 @@ module TypeInference =
             | None ->
                 let typeName = nameCreator()
                 let genType = createType asm typens typeName
-                store.AddType(genType)
+                asm.AddTypes([genType])               
+                log <| sprintf "Root type name: %s" typeName
                 genType          
         
         let getOrCreateNameFromParent (jToken: JToken) nameCreator =
@@ -100,7 +94,12 @@ module TypeInference =
             | None ->
                 nameCreator()
 
-        let rec processToken token (rootGeneratedType: ProvidedTypeDefinition option, generatedType: ProvidedTypeDefinition option) =
+        let rootType =
+            let typeName = getUniqueTypeName()                 
+            log <| sprintf "Root type name: %s" typeName
+            getOrCreateTypeDefinition None (fun _ -> typeName)
+
+        let rec processToken token (generatedType: ProvidedTypeDefinition option) =
             match readToken token with
             | Property(jProperty) ->                 
                 let name = initCap jProperty.Name
@@ -108,30 +107,26 @@ module TypeInference =
                 let generatedType = 
                     getOrCreateTypeDefinition generatedType (fun _ -> name)
                 log <| sprintf "Property type parent name: %s" generatedType.FullName
-                let (root, inferredType) = processToken jProperty.First (rootGeneratedType, Some(generatedType))
+                let inferredType = processToken jProperty.First (Some(generatedType))
                 let property = createProperty name inferredType 
                 log <| sprintf "Property inferred type name: %s" inferredType.FullName
                 generatedType.AddMember(property)
-                (rootGeneratedType, generatedType.AsType())
-            | Object(jObject) ->       
-                
+                generatedType.AsType()
+            | Object(jObject) ->          
                 let typeName =
                     getOrCreateNameFromParent jObject getUniqueTypeName                   
                 log <| sprintf "Object type name: %s" typeName
                 let generatedType = 
-                    getOrCreateTypeDefinition None (fun _ -> typeName)
+                    match generatedType with 
+                    | None ->
+                        rootType
+                    | Some(_) ->
+                        getOrCreateTypeDefinition None (fun _ -> typeName)
                     
                 log <| sprintf "Object generatedTypeName name: %s" generatedType.FullName
-                let rootType = 
-                    match rootGeneratedType with
-                    | None ->
-                        log <| sprintf "Object root generatedTypeName name: %s" generatedType.FullName
-                        generatedType
-                    | Some (typ) ->
-                        typ
                 jObject
-                |> Seq.iter (fun prop -> processToken prop (Some(rootType), Some(generatedType)) |> ignore)
-                (Some(rootType), generatedType.AsType())
+                |> Seq.iter (fun prop -> processToken prop (Some(generatedType)) |> ignore)
+                generatedType.AsType()
             | Array(jArray) ->
                 let typeName =
                     getOrCreateNameFromParent jArray getUniqueTypeName  
@@ -148,14 +143,15 @@ module TypeInference =
                         |> List.ofSeq
                     | _ ->
                         []*)
-                let (root, inferredType) = processToken largestToken (rootGeneratedType, Some(generatedType))
+                let inferredType = processToken largestToken (Some(generatedType))
                 log <| sprintf "Array inferredType name: %s" inferredType.FullName      
-                (rootGeneratedType, arrayType inferredType)
+                arrayType inferredType
             | Value(value) ->
                 match value with
                 | String ->
-                    (rootGeneratedType, typeof<string>)
+                    typeof<string>
                 | Float ->
-                     (rootGeneratedType, typeof<decimal>)
+                    typeof<decimal>
 
-        (processToken root (None, None), store)
+        processToken root None |> ignore
+        rootType

@@ -5,44 +5,44 @@ open System.Collections.Generic
 open System.IO
 open System.Reflection
 open FSharp.Quotations
+open Newtonsoft.Json
+open Newtonsoft.Json.Linq
 open FSharp.Core.CompilerServices
 open FSharp.Liminiens.JsonProvider
 open ProviderImplementation
 open ProviderImplementation.ProvidedTypes
-open Newtonsoft.Json
-open Newtonsoft.Json.Linq
 open System.Diagnostics
 
 // Put any utility helpers here
 
 [<TypeProvider>]
 type JsonProvider (config : TypeProviderConfig) as this =
-    inherit TypeProviderForNamespaces (config, assemblyReplacementMap=[("JsonProvider.DesignTime", "JsonProvider")])
+    inherit TypeProviderForNamespaces (config, assemblyReplacementMap=[("JsonProvider.DesignTime", "JsonProvider")], addDefaultProbingLocation=true)
 
     let providerTypeName = "JsonProvider"
     let ns = "FSharp.Liminiens.JsonProvider"
-    let asm = Assembly.GetExecutingAssembly()
+    let execAsm = Assembly.GetExecutingAssembly()
 
-    do asm.Location |> Path.GetDirectoryName |> this.RegisterProbingFolder
+    do execAsm.Location |> Path.GetDirectoryName |> this.RegisterProbingFolder
 
     // check we contain a copy of runtime files, and are not referencing the runtime DLL
-    do assert (typeof<Marker>.Assembly.GetName().Name = asm.GetName().Name)  
+    do assert (typeof<Marker>.Assembly.GetName().Name = execAsm.GetName().Name)  
 
     let buildStaticParameters (typeName: string) (args: obj[]) =
         let sample = args.[0] :?> string
-        let sampleObject = JObject.Parse sample
+        let sampleObject = Json.parse sample
         
-        let ((sampleType, _), store) = TypeInference.inferType sampleObject.Root asm ns
-        let sampleType = Option.get sampleType
-        let staticPropertyType = createType asm store.Namespace typeName
-        this.AddNamespace(store.Namespace, (store.GetTypes()) @ [staticPropertyType])
+        let asm = ProvidedAssembly()
+        let rootType = TypeInference.inferType sampleObject.Root asm ns
+        let sampleType = rootType.AsType()
+        let staticPropertyType = createType asm ns typeName
 
         let sampleProperty = 
             ProvidedProperty(
                 propertyName = "Value", 
                 propertyType = sampleType, 
                 isStatic = true,
-                getterCode = fun _ -> <@@ JsonConvert.DeserializeObject(sample, sampleType) @@>)
+                getterCode = fun _ -> <@@ Json.deserialize sample sampleType @@>)
         sampleProperty.AddXmlDoc("Gets the sample data value")
         staticPropertyType.AddMember(sampleProperty)
 
@@ -53,17 +53,18 @@ type JsonProvider (config : TypeProviderConfig) as this =
                 returnType = sampleType, 
                 isStatic = true,
                 invokeCode = 
-                    fun args -> <@@ JsonConvert.DeserializeObject(sample, sampleType) @@>) 
+                    fun args -> <@@ Json.deserialize (%%args.[0]: string) sampleType @@>) 
         parseMethod.AddXmlDoc "Deserializes JSON input string"
         staticPropertyType.AddMember(parseMethod)
-
+        
+        asm.AddTypes([staticPropertyType])
         staticPropertyType
 
     let staticParameters = 
         [ ProvidedStaticParameter("Sample", typeof<string>, parameterDefaultValue = "") ] 
     
     let generatedType = 
-        let providedType = createType asm ns providerTypeName
+        let providedType = createType execAsm ns providerTypeName
         providedType.DefineStaticParameters(staticParameters, buildStaticParameters)
         providedType
     do
