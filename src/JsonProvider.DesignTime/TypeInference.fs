@@ -30,32 +30,103 @@ module TypeInference =
     type JsonValue =
         | String
         | Float
+        | Int
+        | Long
 
     type JsonTokenType =
         | Object of JObject
         | Property of JProperty
         | Array of JArray
-        | Value of JsonValue
+        | Value of JsonValue         
 
-    let readToken (jToken: JToken) =
-        match jToken.Type with
-        | JTokenType.Object ->
-            Object(jToken :?> JObject)
-        | JTokenType.Property ->
-            Property(jToken :?> JProperty)
-        | JTokenType.Array ->
-            Array(jToken :?> JArray)
-        | JTokenType.Integer
-        | JTokenType.Float ->
-            Value(Float)
-        | _ ->
-            Value(String)
+    let readToken =
+        let minValue = int64 Int32.MinValue
+        let maxValue = int64 Int32.MaxValue
+
+        fun (jToken: JToken) ->
+            match jToken.Type with
+            | JTokenType.Object ->
+                Object(jToken :?> JObject)
+            | JTokenType.Property ->
+                Property(jToken :?> JProperty)
+            | JTokenType.Array ->
+                Array(jToken :?> JArray)
+            | JTokenType.Integer ->
+                let value = jToken.Value<int64>()
+                if value > maxValue || value < minValue then
+                   Value(Long)
+                else
+                   Value(Int)
+            | JTokenType.Float ->
+                Value(Float)
+            | _ ->
+                Value(String)
 
     let getUniqueName prefix =
         let mutable current = 0
         fun () ->
             current <- current + 1
             sprintf "%s%i" prefix current
+
+    let (|IntType|LongType|DecimalType|StringType|ObjectType|MixedType|) (tokens: JsonTokenType list) = 
+        let checkType predicate = 
+            tokens |> List.forall predicate
+        
+        let isPrimitive = (function Value(_) -> true | _ -> false)
+
+        let isInt = (function (Value(Int)) -> true | _ -> false)
+
+        let isLong = (function (Value(Long)) -> true | _ -> false)
+
+        let isFloat = (function (Value(Float)) -> true | _ -> false)
+
+        let isFloatOrInt value = 
+            match value with 
+            | Value(valueType) ->
+                 match valueType with 
+                 | Float 
+                 | Int 
+                 | Long -> 
+                    true 
+                 | _ -> 
+                    false
+            | _ ->
+                false
+        
+        let isInt32OrInt64 value = 
+            match value with 
+            | Value(valueType) ->
+                 match valueType with 
+                 | Int 
+                 | Long -> 
+                    true 
+                 | _ -> 
+                    false
+            | _ ->
+                false
+
+        let isObject = (function (Object(_)) -> true | _ -> false)
+
+        match checkType isPrimitive with
+        | true ->
+            if checkType isFloat then
+                DecimalType
+            elif checkType isLong then
+                LongType
+            elif checkType isInt then
+                IntType
+            elif checkType isInt32OrInt64 then
+                LongType
+            elif checkType isFloatOrInt then
+                DecimalType
+            else
+                StringType
+        | false ->   
+            if checkType isObject then
+                ObjectType  
+            else
+                MixedType
+
 
     let inferType root (tpType: ProvidedTypeDefinition) =
         log <| sprintf "Start type inference"
@@ -93,8 +164,40 @@ module TypeInference =
             let typeName = getUniqueTypeName()
             log <| sprintf "Root type name: %s" typeName
             getOrCreateTypeDefinition None (fun _ -> typeName)
+        
+        let rec processArrayToken (generatedType: ProvidedTypeDefinition) (jArray: JArray) =
+            let tokens =
+                jArray 
+                |> Seq.map readToken
+                |> List.ofSeq
+            
+            let arrayType = 
+                match tokens with
+                | DecimalType ->
+                    makeArrayType typeof<decimal>
+                | LongType ->
+                    makeArrayType typeof<int64>
+                | IntType ->
+                    makeArrayType typeof<int32>
+                | StringType ->
+                    makeArrayType typeof<string>
+                | MixedType ->
+                    typeof<JArray>               
+                | ObjectType ->
+                    (*let allProperties = 
+                        tokens |> Seq.distinctBy (fun c -> c)*)
+                               
+                    let largestToken = jArray |> Seq.maxBy (fun el -> el.Count())
 
-        let rec processToken token (generatedType: ProvidedTypeDefinition option) =
+                    let (inferredType: Type) = processToken largestToken (Some(generatedType))
+                    log <| sprintf "Array object element inferred type name: %s" inferredType.FullName
+
+                    makeArrayType inferredType
+            
+            log <| sprintf "Array type name: %s" arrayType.FullName
+            arrayType
+
+        and processToken token (generatedType: ProvidedTypeDefinition option) =
             match readToken token with
             | Property(jProperty) ->
                 let name = initCap jProperty.Name
@@ -106,8 +209,7 @@ module TypeInference =
 
                 let inferredType = processToken jProperty.First (Some(generatedType))
                 let field = createField name inferredType
-
-                log <| sprintf "Field inferred type name: %s" inferredType.FullName
+                
                 log <| sprintf "Field type full name: %s" field.FieldType.FullName
 
                 generatedType.AddMember(field)
@@ -117,7 +219,6 @@ module TypeInference =
                 generatedType :> Type
 
             | Object(jObject) ->
-
                 let generatedType =
                     match generatedType with
                     | None ->
@@ -128,38 +229,21 @@ module TypeInference =
                         log <| sprintf "Object type name: %s" typeName
                         getOrCreateTypeDefinition None (fun _ -> typeName)
 
-                log <| sprintf "Object generatedTypeName name: %s" generatedType.FullName
+                log <| sprintf "Object type full name: %s" generatedType.FullName
 
                 jObject
                 |> Seq.iter (fun prop -> processToken prop (Some(generatedType)) |> ignore)
 
                 generatedType :> Type
             | Array(jArray) ->
-                let typeName =
-                    getOrCreateNameFromParent jArray getUniqueTypeName
-                log <| sprintf "Array type name: %s" typeName
-
-                let generatedType =
-                    getOrCreateTypeDefinition generatedType (fun _ -> typeName)
-
-                let largestToken = jArray |> Seq.maxBy (fun el -> el.Count())
-                (*let propertyNames =
-                    match readToken largestToken with
-                    | Object(jObject) ->
-                        jObject
-                        |> Seq.map (fun el -> (el :?> JProperty).Name)
-                        |> List.ofSeq
-                    | _ ->
-                        []*)
-                let inferredType = processToken largestToken (Some(generatedType))
-                log <| sprintf "Array element inferred type name: %s" inferredType.FullName
-
-                let arrayType = makeArrayType inferredType
-                log <| sprintf "Array type name: %s" arrayType.FullName
-
-                arrayType
+                let generatedType = Option.get generatedType
+                processArrayToken generatedType jArray
             | Value(value) ->
                 match value with
+                | Int ->
+                    typeof<int32>
+                | Long ->
+                    typeof<int64>
                 | String ->
                     typeof<string>
                 | Float ->
