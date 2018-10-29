@@ -19,21 +19,13 @@ module TypeInference =
         let home = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile)
         let log = Path.Combine(home, "jsoninference_log.txt")
         fun (msg: string) ->
-            File.AppendAllLines(log, [msg])
+            let message =  
+                (DateTime.Now.ToString("dd/MM/yyyy HH:mm:ss.fff"), msg)
+                ||> sprintf "[%s]: %s"
+            File.AppendAllLines(log,  [message])
         #else
         fun (str: string) -> ()
         #endif
-
-    type TypeStore(typesNamespace: string) =
-        let store = new List<ProvidedTypeDefinition>()
-
-        member this.Namespace = typesNamespace
-
-        member this.AddType(typ) =
-            store.Add(typ)
-
-        member this.GetTypes() =
-            store |> List.ofSeq
 
     type JsonValue =
         | String
@@ -65,12 +57,8 @@ module TypeInference =
             current <- current + 1
             sprintf "%s%i" prefix current
 
-    //let getUniqueTypeName = getUniqueName "ProvidedType"
-
-    //let getUniqueProviderName = getUniqueName "TypeProvider"
-
-    let inferType root (tpType: ProvidedTypeDefinition) ns =
-        let typens = ns //sprintf "%s.%s" ns (getUniqueProviderName())
+    let inferType root (tpType: ProvidedTypeDefinition) =
+        log <| sprintf "Start type inference%s" Environment.NewLine
 
         // IDE may call TPDTC multiple times (even for one use of TP)
         // so scope of uniquness should per IDE call (instead of shared across all)
@@ -82,14 +70,12 @@ module TypeInference =
                 genType
             | None ->
                 let typeName = nameCreator()
-                let genType = createType typeName
-                
+                let genType = createType typeName           
                 // Add default constructor (Otherwise Json.NET deserializer will noy be able to create an instance)
                 genType.AddMember <| ProvidedConstructor([], invokeCode = fun _ -> <@@ () @@>)
-
                 // Only root tpType you add to asm, all other types will be nested
+                log <| sprintf "Generated type full name: %s" genType.FullName
                 tpType.AddMember(genType)
-                log <| sprintf "Root type name: %s" typeName
                 genType
 
         let getOrCreateNameFromParent (jToken: JToken) nameCreator =
