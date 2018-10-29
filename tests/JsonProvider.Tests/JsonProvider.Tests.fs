@@ -7,6 +7,7 @@ type TestTyp = JsonProvider<"""{"dat": 1 }""">
 
 [<Test>]
 let ``BasicTest`` () =
-    //TestTyp.Value1
+    printfn "%A" TestTyp.Value
+    printfn "%A" (TestTyp.Parse """{"dat": 2 }""")
     ()
 

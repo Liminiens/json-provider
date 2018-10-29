@@ -9,8 +9,9 @@ open ProviderImplementation.ProvidedTypes
 module internal TypeProviderHelpers =
     open System.Globalization
 
-    let createType (asm: Assembly) ns typeName =
-        ProvidedTypeDefinition(asm, ns, typeName, baseType = Some typeof<obj>, isErased = false, isSealed = false)
+    let createType typeName =
+        // You have to specify asm & ns only for root TP type
+        ProvidedTypeDefinition(typeName, baseType = Some typeof<obj>, isErased = false, isSealed = false)
        
     let createProperty propertyName propertyType = 
         ProvidedProperty(propertyName, propertyType)
