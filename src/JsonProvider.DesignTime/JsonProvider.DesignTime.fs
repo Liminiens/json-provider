@@ -36,8 +36,7 @@ type JsonProvider (config : TypeProviderConfig) as this =
         // Create root TP type specifing asm and ns
         let tpType = ProvidedTypeDefinition(asm, ns, typeName, Some typeof<obj>, isErased=false)
 
-        let rootType = TypeInference.inferType sampleObject.Root tpType
-        let sampleType = rootType :> Type
+        let sampleType = TypeInference.inferType sampleObject.Root tpType
 
         let sampleProperty =
             ProvidedProperty(
