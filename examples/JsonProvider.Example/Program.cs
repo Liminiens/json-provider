@@ -1,6 +1,5 @@
-﻿using System;
-using JsonProvider.Provider;
-using Newtonsoft.Json.Linq;
+﻿using JsonProvider.Provider;
+using System;
 
 namespace JsonProvider.Example
 {
@@ -8,10 +7,20 @@ namespace JsonProvider.Example
     {
         static void Main(string[] args)
         {
-            var data = ProviderExampleType.Value.Data;
-            foreach (var value in data)
+            var sample = ProviderExampleType.GetSampleValue();
+            Print(sample);
+            var parsed = ProviderExampleType.Parse("{ \"Data\": [{ \"Test\": 1, \"Array\": [2, 3] }] }");
+            Print(parsed);
+        }
+
+        static void Print(ProviderExampleType.ProvidedTypeRoot data)
+        {
+            foreach (var el in data.Data)
             {
-                Console.WriteLine(value);
+                foreach (var value in el.Array)
+                {
+                    Console.WriteLine(value);
+                }
             }
         }
     }
