@@ -1,5 +1,7 @@
 ﻿namespace FSharp.Liminiens.JsonProvider
 
+type TypeInferenceSettings = { RootTypeName: string }
+
 module TypeInference =
     open System
     open System.Linq
@@ -107,7 +109,7 @@ module TypeInference =
             else
                 MixedType
 
-    let inferType root (tpType: ProvidedTypeDefinition) =
+    let inferType root (tpType: ProvidedTypeDefinition) (settings: TypeInferenceSettings)=
         Logging.log <| sprintf "Start type inference"
 
         // IDE may call TPDTC multiple times (even for one use of TP)
@@ -140,7 +142,7 @@ module TypeInference =
                 nameCreator()
 
         let rootType =
-            let typeName = "ProvidedTypeRoot"
+            let typeName = settings.RootTypeName
             Logging.log <| sprintf "Root type name: %s" typeName
             getOrCreateTypeDefinition None (fun _ -> typeName)
         

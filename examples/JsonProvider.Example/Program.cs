@@ -7,13 +7,13 @@ namespace JsonProvider.Example
     {
         static void Main(string[] args)
         {
-            var sample = ProviderExampleType.GetSampleValue();
+            var sample = ProviderExampleType.GetSample();
             Print(sample);
             var parsed = ProviderExampleType.Parse("{ \"Data\": [{ \"Test\": 1, \"Array\": [2, 3] }] }");
             Print(parsed);
         }
 
-        static void Print(ProviderExampleType.ProvidedTypeRoot data)
+        static void Print(ProviderExampleType.Root data)
         {
             foreach (var el in data.Data)
             {

@@ -1,19 +1,11 @@
 module JsonProviderImplementation
 #nowarn "0025"
 
-open System
-open System.Collections.Generic
 open System.IO
 open System.Reflection
-open FSharp.Quotations
-open Newtonsoft.Json
-open Newtonsoft.Json.Linq
 open FSharp.Core.CompilerServices
 open FSharp.Liminiens.JsonProvider
-open ProviderImplementation
 open ProviderImplementation.ProvidedTypes
-open ProviderImplementation.ProvidedTypes.UncheckedQuotations
-open System.Diagnostics
 
 // Put any utility helpers here
 
@@ -32,13 +24,16 @@ type JsonProvider (config : TypeProviderConfig) as this =
 
     let buildStaticParameters (typeName: string) (args: obj[]) =
         let sample = args.[0] :?> string
+        let rootTypeName = args.[1] :?> string
+
         let sampleObject = Json.parse sample
 
         let asm = ProvidedAssembly()
         // Create root TP type specifing asm and ns
         let tpType = ProvidedTypeDefinition(asm, ns, typeName, Some typeof<obj>, isErased=false)
 
-        let sampleType = TypeInference.inferType sampleObject.Root tpType
+        let settings = { RootTypeName = rootTypeName }
+        let sampleType = TypeInference.inferType sampleObject.Root tpType settings
         
         let sampleMethod =
             ProvidedMethod(
@@ -53,7 +48,7 @@ type JsonProvider (config : TypeProviderConfig) as this =
 
         let sampleValueMethod =
             ProvidedMethod(
-                methodName = "GetSampleValue",
+                methodName = "GetSample",
                 parameters = [],
                 returnType = sampleType,
                 isStatic = true,
@@ -70,14 +65,15 @@ type JsonProvider (config : TypeProviderConfig) as this =
                 isStatic = true,
                 invokeCode =
                     fun args -> <@@ Json.deserialize (%%args.[0]: string) sampleType @@>)
-        parseMethod.AddXmlDoc("Deserializes JSON input string")
+        parseMethod.AddXmlDoc("Deserializes json input string to provided type")
         tpType.AddMember(parseMethod)
 
         asm.AddTypes([tpType])
         tpType
 
     let staticParameters =
-        [ ProvidedStaticParameter("Sample", typeof<string>, parameterDefaultValue = "") ]
+        [ ProvidedStaticParameter("Sample", typeof<string>, parameterDefaultValue = "");
+          ProvidedStaticParameter("RootTypeName", typeof<string>, parameterDefaultValue = "Root") ]
 
     let generatedType =
         let providedType = ProvidedTypeDefinition(execAsm, ns, providerTypeName, baseType = Some typeof<obj>, isErased = false)
