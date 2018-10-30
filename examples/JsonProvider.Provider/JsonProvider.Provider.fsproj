@@ -1,0 +1,21 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netcoreapp2.1</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="Library.fs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Newtonsoft.Json" Version="12.0.1-beta1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="JsonProvider.Runtime">
+      <HintPath>..\..\src\JsonProvider.Runtime\bin\Debug\netstandard2.0\JsonProvider.Runtime.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+
+</Project>
