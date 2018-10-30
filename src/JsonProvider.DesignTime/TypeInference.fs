@@ -69,6 +69,7 @@ module TypeInference =
             sprintf "%s%i" prefix current
 
     let (|IntType|LongType|DecimalType|StringType|ObjectType|MixedType|) (tokens: JsonTokenType list) = 
+
         let checkType predicate = 
             tokens |> List.forall predicate
         
@@ -161,7 +162,7 @@ module TypeInference =
                 nameCreator()
 
         let rootType =
-            let typeName = getUniqueTypeName()
+            let typeName = "ProvidedType"
             log <| sprintf "Root type name: %s" typeName
             getOrCreateTypeDefinition None (fun _ -> typeName)
         
