@@ -40,10 +40,18 @@ type JsonProvider (config : TypeProviderConfig) as this =
 
         let sampleType = TypeInference.inferType sampleObject.Root tpType
         
-        let sampleField = ProvidedField.Literal("SampleJson", sampleType, sample)
-        tpType.AddMember(sampleField)
-        
-        let parseMethod =
+        let sampleMethod =
+            ProvidedMethod(
+                methodName = "GetSampleJson",
+                parameters = [],
+                returnType = typeof<string>,
+                isStatic = true,
+                invokeCode =
+                    fun args -> <@@ sample @@>)
+        sampleMethod.AddXmlDoc("Returns json sample")
+        tpType.AddMember(sampleMethod)
+
+        let sampleValueMethod =
             ProvidedMethod(
                 methodName = "GetSampleValue",
                 parameters = [],
@@ -51,8 +59,8 @@ type JsonProvider (config : TypeProviderConfig) as this =
                 isStatic = true,
                 invokeCode =
                     fun args -> <@@ Json.deserialize sample sampleType @@>)
-        parseMethod.AddXmlDoc("Gets the sample data value")
-        tpType.AddMember(parseMethod)
+        sampleValueMethod.AddXmlDoc("Returns deserialized sample")
+        tpType.AddMember(sampleValueMethod)
 
         let parseMethod =
             ProvidedMethod(

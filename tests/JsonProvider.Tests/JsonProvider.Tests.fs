@@ -5,7 +5,6 @@ open NUnit.Framework
 open Newtonsoft.Json.Linq
 
 module Tests = 
-
     type ArrayIntType = JsonProvider<"""{ "Data": [1, 2, 3] }""">
 
     [<Test>]

@@ -2,7 +2,6 @@ namespace FSharp.Liminiens.JsonProvider
 
 open Newtonsoft.Json
 open Newtonsoft.Json.Linq
-open System.Diagnostics
 open System
 
 // Put any runtime constructs here

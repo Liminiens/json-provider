@@ -17,16 +17,16 @@ module internal TypeProviderHelpers =
         // You have to specify asm & ns only for root TP type
         ProvidedTypeDefinition(typeName, baseType = Some typeof<obj>, isErased = false, isSealed = false)
     
-    let generateAutoProperty (propName: string) typ =
+    let createAutoProperty (propName: string) typ =
         let providedField = ProvidedField("_" + propName.ToLower(), typ)
         let providedProperty =
             ProvidedProperty(propName, typ,
                 getterCode = (fun [this] -> Expr.FieldGetUnchecked(this, providedField)),
                 setterCode = (fun [this; v] -> Expr.FieldSetUnchecked(this, providedField, v)))
-        providedField, providedProperty
-
-    let initCap (str: string) = 
-        CultureInfo.CurrentCulture.TextInfo.ToTitleCase(str.ToLower())    
+        providedField, providedProperty 
     
     let createArrayType (ty: Type) = ty.MakeArrayType()
+
+    let initCap (str: string) = 
+        CultureInfo.CurrentCulture.TextInfo.ToTitleCase(str.ToLower())   
 

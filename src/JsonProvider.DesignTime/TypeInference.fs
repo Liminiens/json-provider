@@ -2,31 +2,10 @@
 
 module TypeInference =
     open System
-    open System.Collections
     open System.Linq
-    open System.Globalization
-    open Newtonsoft.Json
     open Newtonsoft.Json.Linq
-    open ProviderImplementation
     open ProviderImplementation.ProvidedTypes
-    open System.Collections.Generic
-    open System.IO
-    open System.Reflection
-    open System.Diagnostics
-
-    let log =
-        #if DEBUG
-        let home = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile)
-        let log = Path.Combine(home, "jsoninference_log.txt")
-        fun (msg: string) ->
-            let message =  
-                let time = DateTime.Now.ToString("dd/MM/yyyy HH:mm:ss.fff")
-                sprintf "[%s]: %s" time msg
-            File.AppendAllLines(log,  [message])
-        #else
-        fun (str: string) -> ()
-        #endif
-
+  
     type JsonValue =
         | String
         | Float
@@ -37,7 +16,13 @@ module TypeInference =
         | Object of JObject
         | Property of JProperty
         | Array of JArray
-        | Value of JsonValue         
+        | Value of JsonValue     
+    
+    let getUniqueName prefix =
+        let mutable current = 0
+        fun () ->
+            current <- current + 1
+            sprintf "%s%i" prefix current    
     
     let readToken =
         let minValue = int64 Int32.MinValue
@@ -54,19 +39,13 @@ module TypeInference =
             | JTokenType.Integer ->
                 let value = jToken.Value<int64>()
                 if value > maxValue || value < minValue then
-                   Value(Long)
+                    Value(Long)
                 else
-                   Value(Int)
+                    Value(Int)
             | JTokenType.Float ->
                 Value(Float)
             | _ ->
                 Value(String)
-
-    let getUniqueName prefix =
-        let mutable current = 0
-        fun () ->
-            current <- current + 1
-            sprintf "%s%i" prefix current
 
     let (|IntType|LongType|DecimalType|StringType|ObjectType|MixedType|) (tokens: JsonTokenType list) = 
 
@@ -84,12 +63,12 @@ module TypeInference =
         let isFloatOrInt value = 
             match value with 
             | Value(valueType) ->
-                 match valueType with 
-                 | Float 
-                 | Int 
-                 | Long -> 
+                match valueType with 
+                | Float 
+                | Int 
+                | Long -> 
                     true 
-                 | _ -> 
+                | _ -> 
                     false
             | _ ->
                 false
@@ -97,11 +76,11 @@ module TypeInference =
         let isInt32OrInt64 value = 
             match value with 
             | Value(valueType) ->
-                 match valueType with 
-                 | Int 
-                 | Long -> 
+                match valueType with 
+                | Int 
+                | Long -> 
                     true 
-                 | _ -> 
+                | _ -> 
                     false
             | _ ->
                 false
@@ -128,9 +107,8 @@ module TypeInference =
             else
                 MixedType
 
-
     let inferType root (tpType: ProvidedTypeDefinition) =
-        log <| sprintf "Start type inference"
+        Logging.log <| sprintf "Start type inference"
 
         // IDE may call TPDTC multiple times (even for one use of TP)
         // so scope of uniquness should per IDE call (instead of shared across all)
@@ -147,7 +125,7 @@ module TypeInference =
                 genType.AddMember <| ProvidedConstructor([], invokeCode = fun _ -> <@@ () @@>)
                 // Only root tpType you add to asm, all other types will be nested
                 tpType.AddMember(genType)
-                log <| sprintf "Generated type full name: %s" genType.FullName
+                Logging.log <| sprintf "Generated type full name: %s" genType.FullName
                 genType
 
         let getOrCreateNameFromParent (jToken: JToken) nameCreator =
@@ -163,7 +141,7 @@ module TypeInference =
 
         let rootType =
             let typeName = "ProvidedTypeRoot"
-            log <| sprintf "Root type name: %s" typeName
+            Logging.log <| sprintf "Root type name: %s" typeName
             getOrCreateTypeDefinition None (fun _ -> typeName)
         
         let rec processArrayToken (generatedType: ProvidedTypeDefinition) (jArray: JArray) =
@@ -191,32 +169,32 @@ module TypeInference =
                     let largestToken = jArray |> Seq.maxBy (fun el -> el.Count())
 
                     let (inferredType: Type) = processToken largestToken (Some(generatedType))
-                    log <| sprintf "Array object element type name: %s" inferredType.FullName
+                    Logging.log <| sprintf "Array object element type name: %s" inferredType.FullName
 
                     createArrayType inferredType
             
-            log <| sprintf "Array type name: %s" arrayType.FullName
+            Logging.log <| sprintf "Array type name: %s" arrayType.FullName
             arrayType
 
         and processToken token (generatedType: ProvidedTypeDefinition option) =
             match readToken token with
             | Property(jProperty) ->
                 let name = initCap jProperty.Name
-                log <| sprintf "Property name: %s" name
+                Logging.log <| sprintf "Property name: %s" name
 
                 let generatedType =
                     getOrCreateTypeDefinition generatedType (fun _ -> name)
-                log <| sprintf "Property parent type name: %s" generatedType.FullName
+                Logging.log <| sprintf "Property parent type name: %s" generatedType.FullName
 
                 let inferredType = processToken jProperty.First (Some(generatedType))
-                let field, prop = generateAutoProperty name inferredType
+                let field, prop = createAutoProperty name inferredType
                 
-                log <| sprintf "Property type full name: %s" field.FieldType.FullName
+                Logging.log <| sprintf "Property type full name: %s" field.FieldType.FullName
                 
                 generatedType.AddMember(prop)
                 generatedType.AddMember(field)
                 
-                log <| sprintf "Property declaring type full name: %s" field.DeclaringType.FullName
+                Logging.log <| sprintf "Property declaring type full name: %s" field.DeclaringType.FullName
 
                 generatedType :> Type
 
@@ -228,10 +206,10 @@ module TypeInference =
                     | Some(_) ->
                         let typeName =
                             getOrCreateNameFromParent jObject getUniqueTypeName
-                        log <| sprintf "Object type name: %s" typeName
+                        Logging.log <| sprintf "Object type name: %s" typeName
                         getOrCreateTypeDefinition None (fun _ -> typeName)
 
-                log <| sprintf "Object type full name: %s" generatedType.FullName
+                Logging.log <| sprintf "Object type full name: %s" generatedType.FullName
 
                 jObject
                 |> Seq.iter (fun prop -> processToken prop (Some(generatedType)) |> ignore)
