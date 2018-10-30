@@ -231,5 +231,4 @@ module TypeInference =
                 | Float ->
                     typeof<decimal>
 
-        processToken root None |> ignore
-        rootType :> Type
+        processToken root None
