@@ -38,7 +38,7 @@ module TypeInference =
         | Property of JProperty
         | Array of JArray
         | Value of JsonValue         
-
+    
     let readToken =
         let minValue = int64 Int32.MinValue
         let maxValue = int64 Int32.MaxValue
@@ -162,7 +162,7 @@ module TypeInference =
                 nameCreator()
 
         let rootType =
-            let typeName = "ProvidedType"
+            let typeName = "ProvidedTypeRoot"
             log <| sprintf "Root type name: %s" typeName
             getOrCreateTypeDefinition None (fun _ -> typeName)
         
@@ -175,13 +175,13 @@ module TypeInference =
             let arrayType = 
                 match tokens with
                 | DecimalType ->
-                    makeArrayType typeof<decimal>
+                    createArrayType typeof<decimal>
                 | LongType ->
-                    makeArrayType typeof<int64>
+                    createArrayType typeof<int64>
                 | IntType ->
-                    makeArrayType typeof<int32>
+                    createArrayType typeof<int32>
                 | StringType ->
-                    makeArrayType typeof<string>
+                    createArrayType typeof<string>
                 | MixedType ->
                     typeof<JArray>               
                 | ObjectType ->
@@ -191,9 +191,9 @@ module TypeInference =
                     let largestToken = jArray |> Seq.maxBy (fun el -> el.Count())
 
                     let (inferredType: Type) = processToken largestToken (Some(generatedType))
-                    log <| sprintf "Array object element inferred type name: %s" inferredType.FullName
+                    log <| sprintf "Array object element type name: %s" inferredType.FullName
 
-                    makeArrayType inferredType
+                    createArrayType inferredType
             
             log <| sprintf "Array type name: %s" arrayType.FullName
             arrayType
@@ -202,20 +202,21 @@ module TypeInference =
             match readToken token with
             | Property(jProperty) ->
                 let name = initCap jProperty.Name
-                log <| sprintf "Field name: %s" name
+                log <| sprintf "Property name: %s" name
 
                 let generatedType =
                     getOrCreateTypeDefinition generatedType (fun _ -> name)
-                log <| sprintf "Field parent type name: %s" generatedType.FullName
+                log <| sprintf "Property parent type name: %s" generatedType.FullName
 
                 let inferredType = processToken jProperty.First (Some(generatedType))
-                let field = createField name inferredType
+                let field, prop = generateAutoProperty name inferredType
                 
-                log <| sprintf "Field type full name: %s" field.FieldType.FullName
-
+                log <| sprintf "Property type full name: %s" field.FieldType.FullName
+                
+                generatedType.AddMember(prop)
                 generatedType.AddMember(field)
                 
-                log <| sprintf "Field declaring type full name: %s" field.DeclaringType.FullName
+                log <| sprintf "Property declaring type full name: %s" field.DeclaringType.FullName
 
                 generatedType :> Type
 

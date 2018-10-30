@@ -1,4 +1,5 @@
 module JsonProviderImplementation
+#nowarn "0025"
 
 open System
 open System.Collections.Generic
@@ -11,6 +12,7 @@ open FSharp.Core.CompilerServices
 open FSharp.Liminiens.JsonProvider
 open ProviderImplementation
 open ProviderImplementation.ProvidedTypes
+open ProviderImplementation.ProvidedTypes.UncheckedQuotations
 open System.Diagnostics
 
 // Put any utility helpers here
@@ -37,15 +39,20 @@ type JsonProvider (config : TypeProviderConfig) as this =
         let tpType = ProvidedTypeDefinition(asm, ns, typeName, Some typeof<obj>, isErased=false)
 
         let sampleType = TypeInference.inferType sampleObject.Root tpType
-
-        let sampleProperty =
-            ProvidedProperty(
-                propertyName = "Value",
-                propertyType = sampleType,
+        
+        let sampleField = ProvidedField.Literal("SampleJson", sampleType, sample)
+        tpType.AddMember(sampleField)
+        
+        let parseMethod =
+            ProvidedMethod(
+                methodName = "GetSampleValue",
+                parameters = [],
+                returnType = sampleType,
                 isStatic = true,
-                getterCode = fun _ -> <@@ Json.deserialize sample sampleType @@>)
-        sampleProperty.AddXmlDoc("Gets the sample data value")
-        tpType.AddMember(sampleProperty)
+                invokeCode =
+                    fun args -> <@@ Json.deserialize sample sampleType @@>)
+        parseMethod.AddXmlDoc("Gets the sample data value")
+        tpType.AddMember(parseMethod)
 
         let parseMethod =
             ProvidedMethod(
@@ -55,7 +62,7 @@ type JsonProvider (config : TypeProviderConfig) as this =
                 isStatic = true,
                 invokeCode =
                     fun args -> <@@ Json.deserialize (%%args.[0]: string) sampleType @@>)
-        parseMethod.AddXmlDoc "Deserializes JSON input string"
+        parseMethod.AddXmlDoc("Deserializes JSON input string")
         tpType.AddMember(parseMethod)
 
         asm.AddTypes([tpType])

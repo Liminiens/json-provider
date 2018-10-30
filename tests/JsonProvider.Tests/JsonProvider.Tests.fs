@@ -11,7 +11,7 @@ module Tests =
     [<Test>]
     let ``Array int test`` () =
         let expected = [1; 2; 3]
-        let data = ArrayIntType.Value.Data
+        let data = ArrayIntType.GetSampleValue().Data
 
         Assert.AreEqual(typeof<int32[]>, data.GetType())
         CollectionAssert.AreEquivalent(expected, data)
@@ -21,7 +21,7 @@ module Tests =
     [<Test>]
     let ``Array decimal test`` () =
         let expected = [1.2M; 2M; 3M]
-        let data = ArrayDecimalType.Value.Data
+        let data = ArrayDecimalType.GetSampleValue().Data
 
         Assert.AreEqual(typeof<decimal[]>, data.GetType())
         CollectionAssert.AreEquivalent(expected, data)
@@ -31,16 +31,16 @@ module Tests =
     [<Test>]
     let ``Array long test`` () =
         let expected = [100000000000L; 2L; 3L]
-        let data = ArrayLongType.Value.Data
+        let data = ArrayLongType.GetSampleValue().Data
 
         Assert.AreEqual(typeof<int64[]>, data.GetType())
-        CollectionAssert.AreEquivalent(expected, ArrayLongType.Value.Data)
+        CollectionAssert.AreEquivalent(expected, data)
         
     type ArrayObjectType = JsonProvider<"""{ "Data": [{"Test": 1}, {"Test": 2}] }""">
 
     [<Test>]
     let ``Array simple object test`` () =
-        let data = ArrayObjectType.Value.Data
+        let data = ArrayObjectType.GetSampleValue().Data
 
         Assert.AreEqual(1, data.[0].Test)
         Assert.AreEqual(2, data.[1].Test)
@@ -50,7 +50,7 @@ module Tests =
     
     [<Test>]
     let ``Array mixed test`` () =
-        let data = ArrayMixedType.Value.Data
+        let data = ArrayMixedType.GetSampleValue().Data
 
         Assert.AreEqual(1, data.SelectToken("[0].Test").Value<int32>())
         Assert.AreEqual(2, data.[1].Value<int>())
