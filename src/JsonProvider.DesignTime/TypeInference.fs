@@ -8,6 +8,8 @@ module TypeInference =
     open Newtonsoft.Json.Linq
     open ProviderImplementation.ProvidedTypes
     open System.Globalization
+    open System.Threading
+    open System.Collections.Generic
   
     type JsonValue =
         | String
@@ -158,9 +160,7 @@ module TypeInference =
             Logging.log <| sprintf "Root type name: %s" typeName
             getOrCreateTypeDefinition None (fun _ -> typeName)
         
-        let rec processArrayToken (generatedType: ProvidedTypeDefinition) (jArray: JArray) =
-            let typeCache = Map.empty
-            
+        let rec processArrayToken (generatedType: ProvidedTypeDefinition) (jArray: JArray) =           
             let tokens =
                 jArray 
                 |> Seq.map readToken
@@ -181,19 +181,42 @@ module TypeInference =
                 | MixedType ->
                     typeof<JArray>               
                 | ObjectType ->
-                    (*let properties = 
-                        let uniqueProperties =
+                    let properties =
+                        let uniquePropertiesByType = 
                             jArray 
                             |> Seq.collect (fun jobj -> (jobj :?> JObject).Properties())
-                            |> Seq.distinctBy (fun prop -> (prop.Name, prop.Type))
+                            |> Seq.distinctBy (fun prop -> (prop.Name, readToken prop.First))
                             |> List.ofSeq
-                        let nameDuplicates = 
-                            uniqueProperties
-                            |> List.groupBy (fun prop -> initCap prop.Name)
-                            |> List.where (fun lst -> (List.length lst) > 1)*)
-                    let largestToken = jArray |> Seq.maxBy (fun el -> el.Count())
+                        
+                        let groupedByName = 
+                            uniquePropertiesByType
+                            |> List.groupBy (fun prop -> prop.Name)
 
-                    let (inferredType: Type) = processToken largestToken (Some(generatedType))
+                        let uniqueProperties = 
+                            groupedByName
+                            |> List.where (fun (_, lst) -> (List.length lst) = 1)
+                            |> List.collect (fun (_, lst) -> lst)
+
+                        let fixedDuplicates =
+                            let renameProperty (oldProperty: JProperty) (count: int ref) = 
+                                let name = sprintf "%s%i" oldProperty.Name (Interlocked.Increment(count)) 
+                                let newProperty = new JProperty(name, oldProperty.Children())
+                                newProperty
+
+                            groupedByName
+                            |> List.where (fun (_, lst) -> (List.length lst) > 1)
+                            |> List.collect 
+                                (fun (_, properties) -> 
+                                    let count = ref 0
+                                    List.map (fun prop -> renameProperty prop count) properties)
+
+                        uniqueProperties @ fixedDuplicates
+                    
+                    Logging.log "Properties:"
+                    Logging.logProperties properties
+
+                    let jObj = new JObject(properties)
+                    let (inferredType: Type) = processToken jObj (Some(generatedType))
                     Logging.log <| sprintf "Array object element type name: %s" inferredType.FullName
 
                     createArrayType inferredType
@@ -201,14 +224,35 @@ module TypeInference =
             Logging.log <| sprintf "Array type name: %s" arrayType.FullName
             arrayType
 
-        and processToken token (generatedType: ProvidedTypeDefinition option) =
+        and processToken (token: JToken) (generatedType: ProvidedTypeDefinition option) =
             match readToken token with
             | Property(jProperty) ->
-                let name = initCap jProperty.Name
+                let createUniqueName = 
+                    let nameCache = HashSet<string>()
+                    let countName = 
+                        let counter = Dictionary<string, int ref>()
+                        fun name -> 
+                            if counter.ContainsKey(name) |> not then
+                                let count = ref 0
+                                counter.Add(name, count)
+                                Interlocked.Increment(count)
+                            else
+                                Interlocked.Increment(counter.[name])
+                    fun name ->
+                        if nameCache.Contains(name) then
+                            let count = countName name 
+                            let newName = sprintf "%s%i" name count
+                            nameCache.Add(newName) |> ignore
+                            newName
+                        else
+                            nameCache.Add(name) |> ignore
+                            name
+
+                let name = jProperty.Name
                 Logging.log <| sprintf "Property name: %s" name
 
                 let generatedType =
-                    getOrCreateTypeDefinition generatedType (fun _ -> name)
+                    getOrCreateTypeDefinition generatedType (fun _ -> createUniqueName name)
                 Logging.log <| sprintf "Property parent type name: %s" generatedType.FullName
 
                 let inferredType = processToken jProperty.First (Some(generatedType))
@@ -241,6 +285,7 @@ module TypeInference =
 
                 generatedType :> Type
             | Array(jArray) ->
+                Logging.log "Start array processing"
                 let generatedType = Option.get generatedType
                 processArrayToken generatedType jArray
             | Value(value) ->
