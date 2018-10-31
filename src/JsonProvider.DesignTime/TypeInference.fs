@@ -29,7 +29,7 @@ module TypeInference =
         fun () ->
             current <- current + 1
             sprintf "%s%i" prefix current    
-    
+
     let readToken =
         let minValue = int64 Int32.MinValue
         let maxValue = int64 Int32.MaxValue
@@ -181,45 +181,15 @@ module TypeInference =
                 | MixedType ->
                     typeof<JArray>               
                 | ObjectType ->
-                    let properties =
-                        let uniquePropertiesByType = 
-                            jArray 
-                            |> Seq.collect (fun jobj -> (jobj :?> JObject).Properties())
-                            |> Seq.distinctBy (fun prop -> (prop.Name, readToken prop.First))
-                            |> List.ofSeq
-                        
-                        let groupedByName = 
-                            uniquePropertiesByType
-                            |> List.groupBy (fun prop -> prop.Name)
+                    let jObj =
+                        jArray 
+                        |> Seq.collect (fun jobj -> (jobj :?> JObject).Properties())
+                        |> Seq.distinctBy (fun prop -> prop.Name)
+                        |> List.ofSeq
+                        |> JObject
 
-                        let uniqueProperties = 
-                            groupedByName
-                            |> List.where (fun (_, lst) -> (List.length lst) = 1)
-                            |> List.collect (fun (_, lst) -> lst)
-
-                        let fixedDuplicates =
-                            let renameProperty (oldProperty: JProperty) (count: int ref) = 
-                                let name = sprintf "%s%i" oldProperty.Name (Interlocked.Increment(count)) 
-                                let newProperty = new JProperty(name, oldProperty.Children())
-                                newProperty
-
-                            groupedByName
-                            |> List.where (fun (_, lst) -> (List.length lst) > 1)
-                            |> List.collect 
-                                (fun (_, properties) -> 
-                                    let count = ref 0
-                                    List.map (fun prop -> renameProperty prop count) properties)
-
-                        uniqueProperties @ fixedDuplicates
-                    
-                    Logging.log "Properties:"
-                    Logging.logProperties properties
-
-                    let jObj = new JObject(properties)
-                    let (inferredType: Type) = processToken jObj (Some(generatedType))
-                    Logging.log <| sprintf "Array object element type name: %s" inferredType.FullName
-
-                    createArrayType inferredType
+                    processToken jObj (Some(generatedType))
+                    |> createArrayType
             
             Logging.log <| sprintf "Array type name: %s" arrayType.FullName
             arrayType
@@ -227,32 +197,11 @@ module TypeInference =
         and processToken (token: JToken) (generatedType: ProvidedTypeDefinition option) =
             match readToken token with
             | Property(jProperty) ->
-                let createUniqueName = 
-                    let nameCache = HashSet<string>()
-                    let countName = 
-                        let counter = Dictionary<string, int ref>()
-                        fun name -> 
-                            if counter.ContainsKey(name) |> not then
-                                let count = ref 0
-                                counter.Add(name, count)
-                                Interlocked.Increment(count)
-                            else
-                                Interlocked.Increment(counter.[name])
-                    fun name ->
-                        if nameCache.Contains(name) then
-                            let count = countName name 
-                            let newName = sprintf "%s%i" name count
-                            nameCache.Add(newName) |> ignore
-                            newName
-                        else
-                            nameCache.Add(name) |> ignore
-                            name
-
                 let name = jProperty.Name
                 Logging.log <| sprintf "Property name: %s" name
 
                 let generatedType =
-                    getOrCreateTypeDefinition generatedType (fun _ -> createUniqueName name)
+                    getOrCreateTypeDefinition generatedType (fun _ -> name)
                 Logging.log <| sprintf "Property parent type name: %s" generatedType.FullName
 
                 let inferredType = processToken jProperty.First (Some(generatedType))
