@@ -7,11 +7,13 @@ module TypeInference =
     open System.Linq
     open Newtonsoft.Json.Linq
     open ProviderImplementation.ProvidedTypes
+    open System.Globalization
   
     type JsonValue =
         | String
         | Float
         | Int
+        | Boolean
         | Long
 
     type JsonTokenType =
@@ -46,10 +48,16 @@ module TypeInference =
                     Value(Int)
             | JTokenType.Float ->
                 Value(Float)
+            | JTokenType.Boolean ->
+                Value(Boolean)
             | _ ->
-                Value(String)
+                let tokenValue = jToken.Value<string>().ToLower(CultureInfo.InvariantCulture).Trim()
+                if tokenValue = "false" || tokenValue = "true" then
+                    Value(Boolean)
+                else
+                    Value(String)
 
-    let (|IntType|LongType|DecimalType|StringType|ObjectType|MixedType|) (tokens: JsonTokenType list) = 
+    let (|IntType|LongType|DecimalType|BooleanType|StringType|ObjectType|MixedType|) (tokens: JsonTokenType list) = 
 
         let checkType predicate = 
             tokens |> List.forall predicate
@@ -61,6 +69,8 @@ module TypeInference =
         let isLong = (function (Value(Long)) -> true | _ -> false)
 
         let isFloat = (function (Value(Float)) -> true | _ -> false)
+
+        let isBoolean = (function (Value(Boolean)) -> true | _ -> false)
 
         let isFloatOrInt value = 
             match value with 
@@ -101,6 +111,8 @@ module TypeInference =
                 LongType
             elif checkType isFloatOrInt then
                 DecimalType
+            elif checkType isBoolean then
+                BooleanType
             else
                 StringType
         | false ->   
@@ -147,6 +159,8 @@ module TypeInference =
             getOrCreateTypeDefinition None (fun _ -> typeName)
         
         let rec processArrayToken (generatedType: ProvidedTypeDefinition) (jArray: JArray) =
+            let typeCache = Map.empty
+            
             let tokens =
                 jArray 
                 |> Seq.map readToken
@@ -160,14 +174,23 @@ module TypeInference =
                     createArrayType typeof<int64>
                 | IntType ->
                     createArrayType typeof<int32>
+                | BooleanType ->      
+                    createArrayType typeof<bool>
                 | StringType ->
                     createArrayType typeof<string>
                 | MixedType ->
                     typeof<JArray>               
                 | ObjectType ->
-                    (*let allProperties = 
-                        tokens |> Seq.distinctBy (fun c -> c)*)
-                               
+                    (*let properties = 
+                        let uniqueProperties =
+                            jArray 
+                            |> Seq.collect (fun jobj -> (jobj :?> JObject).Properties())
+                            |> Seq.distinctBy (fun prop -> (prop.Name, prop.Type))
+                            |> List.ofSeq
+                        let nameDuplicates = 
+                            uniqueProperties
+                            |> List.groupBy (fun prop -> initCap prop.Name)
+                            |> List.where (fun lst -> (List.length lst) > 1)*)
                     let largestToken = jArray |> Seq.maxBy (fun el -> el.Count())
 
                     let (inferredType: Type) = processToken largestToken (Some(generatedType))
@@ -222,6 +245,8 @@ module TypeInference =
                 processArrayToken generatedType jArray
             | Value(value) ->
                 match value with
+                | Boolean ->
+                    typeof<bool>
                 | Int ->
                     typeof<int32>
                 | Long ->
