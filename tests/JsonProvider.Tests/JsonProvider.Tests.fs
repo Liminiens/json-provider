@@ -4,7 +4,7 @@ open FSharp.Liminiens.JsonProvider
 open NUnit.Framework
 open Newtonsoft.Json.Linq
 
-module Tests = 
+module ArrayTests = 
     type ArrayIntType = JsonProvider<"""{ "Data": [1, 2, 3] }""">
 
     [<Test>]
@@ -53,3 +53,33 @@ module Tests =
 
         Assert.AreEqual(1, data.SelectToken("[0].Test").Value<int32>())
         Assert.AreEqual(2, data.[1].Value<int>())
+        
+    type ArrayBoolType = JsonProvider<"""{ "Data": ["true", false] }""">  
+
+    [<Test>]
+    let ``Array bool test`` () =
+        let data = ArrayBoolType.GetSample().Data
+        
+        Assert.True(data.[0])
+        Assert.False(data.[1])
+
+module ObjectTests = 
+    
+    type NullType = JsonProvider<"""{"Data": null}""">
+
+    [<Test>]
+    let ``Property null test`` () =
+        let data = NullType.GetSample().Data
+        
+        Assert.IsNull(data)
+    
+    type SameNameDifferentCaseType = JsonProvider<"""{"data": 1, "Data ": 2, "dAtA": 3, "DaTa": 4}""">
+   
+    [<Test>]
+    let ``Same name different case test`` () =
+        let sample = SameNameDifferentCaseType.Parse("""{"data": 10, "Data ": 11, "dAtA": 12, "DaTa": 13}""")
+
+        Assert.AreEqual(10, sample.Data)
+        Assert.AreEqual(11, sample.Data1)
+        Assert.AreEqual(12, sample.DAtA)
+        Assert.AreEqual(13, sample.DaTa)
