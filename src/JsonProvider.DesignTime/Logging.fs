@@ -17,15 +17,4 @@ module Logging =
         #else
         fun (msg: string) -> ()
         #endif
-    
-    let logProperties = 
-        #if DEBUG
-        fun (properties: JProperty seq) ->
-            properties 
-            |> Seq.map 
-                (fun prop -> sprintf """Property name: "%s" type: "%s" """ prop.Name (prop.Type.ToString()))
-            |> Seq.iter log
-        #else
-        fun (properties: JProperty list) -> ()
-        #endif
 
