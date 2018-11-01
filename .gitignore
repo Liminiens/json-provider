@@ -17,6 +17,7 @@ output/
 *.userosscache
 *.sln.docstates
 .idea/
+global.json
 
 # User-specific files (MonoDevelop/Xamarin Studio)
 *.userprefs
