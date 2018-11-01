@@ -46,6 +46,9 @@ module TypeInference =
                 Value(Float)
             | JTokenType.Boolean ->
                 Value(Boolean)
+            | JTokenType.Undefined
+            | JTokenType.Null ->
+                Value(String)
             | _ ->
                 let tokenValue = jToken.Value<string>().ToLower(CultureInfo.InvariantCulture).Trim()
                 if tokenValue = "false" || tokenValue = "true" then
@@ -132,7 +135,6 @@ module TypeInference =
         let createTypeDefinition typeName =
             let typeName = typeName |> getUniqueTypeName
             let genType = createType typeName           
-            // Only root tpType you add to asm, all other types will be nested
             tpType.AddMember(genType)
             Logging.log <| sprintf "Generated type full name: %s" genType.FullName
             genType
