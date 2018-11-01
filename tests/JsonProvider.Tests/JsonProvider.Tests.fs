@@ -71,6 +71,7 @@ module ObjectTests =
     let ``Property null test`` () =
         let data = NullType.GetSample().Data
         
+        Assert.AreEqual(typeof<string>, data.GetType())
         Assert.IsNull(data)
     
     type SameNameDifferentCaseType = JsonProvider<"""{"data": 1, "Data ": 2, "dAtA": 3, "DaTa": 4}""">

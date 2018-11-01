@@ -11,7 +11,10 @@ type Marker() =
 // Put any utility helpers here
 module Json = 
     let deserialize (json: string) (typ: Type) = 
-        JsonConvert.DeserializeObject(json, typ)
+        //https://github.com/JamesNK/Newtonsoft.Json/issues/862
+        let settings = new JsonSerializerSettings()
+        settings.DateParseHandling <- DateParseHandling.None
+        JsonConvert.DeserializeObject(json, typ, settings)
 
     let parse (sample: string) = 
         JObject.Parse(sample)
