@@ -22,13 +22,7 @@ module TypeInference =
         | Object of JObject
         | Property of JProperty
         | Array of JArray
-        | Value of JsonValue     
-    
-    let getUniqueName prefix =
-        let mutable current = 0
-        fun () ->
-            current <- current + 1
-            sprintf "%s%i" prefix current    
+        | Value of JsonValue        
 
     let readToken =
         let minValue = int64 Int32.MinValue
@@ -126,39 +120,38 @@ module TypeInference =
     let inferType root (tpType: ProvidedTypeDefinition) (settings: TypeInferenceSettings)=
         Logging.log <| sprintf "Start type inference"
 
-        // IDE may call TPDTC multiple times (even for one use of TP)
-        // so scope of uniquness should per IDE call (instead of shared across all)
-        let getUniqueTypeName = getUniqueName "ProvidedType"
+        let getUniqueTypeName =
+            let store = new Dictionary<string, int ref>()
+            fun name ->
+                if store.ContainsKey(name) then
+                   sprintf "%s%i" name (Interlocked.Increment(store.[name]))
+                else
+                   store.Add(name, ref 0)
+                   name
 
-        let getOrCreateTypeDefinition (generatedType: ProvidedTypeDefinition option) nameCreator =
-            match generatedType with
-            | Some(genType) ->
-                genType
-            | None ->
-                let typeName = nameCreator()
-                let genType = createType typeName           
-                // Add default constructor (Otherwise Json.NET deserializer will noy be able to create an instance)
-                genType.AddMember <| ProvidedConstructor([], invokeCode = fun _ -> <@@ () @@>)
-                // Only root tpType you add to asm, all other types will be nested
-                tpType.AddMember(genType)
-                Logging.log <| sprintf "Generated type full name: %s" genType.FullName
-                genType
+        let createTypeDefinition typeName =
+            let typeName = typeName |> getUniqueTypeName
+            let genType = createType typeName           
+            // Only root tpType you add to asm, all other types will be nested
+            tpType.AddMember(genType)
+            Logging.log <| sprintf "Generated type full name: %s" genType.FullName
+            genType
 
-        let getOrCreateNameFromParent (jToken: JToken) nameCreator =
+        let tryGetParentNameOrDefault (jToken: JToken) defaultName =
             match Option.ofObj jToken.Parent with
             | Some(parent) ->
                 match readToken parent with
                 | Property(jProperty) ->
-                    initCap jProperty.Name
+                    prettyName jProperty.Name
                 | _ ->
-                    nameCreator()
+                    defaultName
             | None ->
-                nameCreator()
+                defaultName
 
         let rootType =
             let typeName = settings.RootTypeName
             Logging.log <| sprintf "Root type name: %s" typeName
-            getOrCreateTypeDefinition None (fun _ -> typeName)
+            createTypeDefinition typeName
         
         let rec processArrayToken (generatedType: ProvidedTypeDefinition) (jArray: JArray) =           
             let tokens =
@@ -199,13 +192,13 @@ module TypeInference =
             | Property(jProperty) ->
                 let name = jProperty.Name
                 Logging.log <| sprintf "Property name: %s" name
-
-                let generatedType =
-                    getOrCreateTypeDefinition generatedType (fun _ -> name)
+                
+                let generatedType = Option.get generatedType
                 Logging.log <| sprintf "Property parent type name: %s" generatedType.FullName
 
                 let inferredType = processToken jProperty.First (Some(generatedType))
-                let field, prop = createAutoProperty name inferredType
+
+                let field, prop = createAutoProperty name (generatedType :> Type) inferredType
                 
                 Logging.log <| sprintf "Property type full name: %s" field.FieldType.FullName
                 
@@ -222,10 +215,9 @@ module TypeInference =
                     | None ->
                         rootType
                     | Some(_) ->
-                        let typeName =
-                            getOrCreateNameFromParent jObject getUniqueTypeName
+                        let typeName = tryGetParentNameOrDefault jObject "ProvidedType"
                         Logging.log <| sprintf "Object type name: %s" typeName
-                        getOrCreateTypeDefinition None (fun _ -> typeName)
+                        createTypeDefinition typeName
 
                 Logging.log <| sprintf "Object type full name: %s" generatedType.FullName
 
