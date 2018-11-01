@@ -65,7 +65,7 @@ module internal TypeProviderHelpers =
             ProvidedProperty(propertyName, typ,
                 getterCode = (fun [this] -> Expr.FieldGetUnchecked(this, providedField)),
                 setterCode = (fun [this; v] -> Expr.FieldSetUnchecked(this, providedField, v)))
-        providedProperty.AddXmlDoc(sprintf """Corresponds to property "%s" in object""" propName)
+        providedProperty.AddXmlDoc(sprintf """<summary>Corresponds to property "%s" in object</summary>""" propName)
 
         if propName <> propertyName then
             getPropertyNameAttribute propName
