@@ -21,3 +21,6 @@ Building:
     dotnet build -c release
 
     .paket\paket.exe pack src\JsonProvider.Runtime\paket.template --version 0.0.1
+    
+    
+[![Built with NUKE](http://nuke.build/squared)](https://nuke.build)
