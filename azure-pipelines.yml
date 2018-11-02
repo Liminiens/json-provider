@@ -6,8 +6,8 @@ variables:
 
 trigger:
   paths:
-      exclude:
-      - *.md
+    exclude:
+    - README.md
 
 jobs:
 - job:
