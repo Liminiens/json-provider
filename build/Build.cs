@@ -3,7 +3,6 @@ using Nuke.Common.Git;
 using Nuke.Common.ProjectModel;
 using Nuke.Common.Tools.DotNet;
 using Nuke.Common.Tools.GitVersion;
-using Nuke.Common.Tools.Nunit;
 using Nuke.Common.Tools.Paket;
 using static Nuke.Common.IO.FileSystemTasks;
 using static Nuke.Common.IO.PathConstruction;
@@ -56,6 +55,7 @@ class Build : NukeBuild
         .DependsOn(Compile)
         .Executes(() =>
         {
+            DotNetTest(s => s.SetResultsDirectory(OutputDirectory / "tests"));
         });
 
     Target Pack => _ => _
