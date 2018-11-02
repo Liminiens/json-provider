@@ -11,7 +11,7 @@ trigger:
 
 jobs:
 - job:
-  displayName: ubuntu_16.04
+  displayName: ubuntu_16_04
   pool:
     vmImage: 'Ubuntu 16.04'
 
@@ -39,7 +39,7 @@ jobs:
     displayName: 'dotnet test $(buildConfiguration)'
 
 - job:
-  displayName: macOS_10.13
+  displayName: macOS_10_13
   pool:
     vmImage: 'macOS-10.13'
 
