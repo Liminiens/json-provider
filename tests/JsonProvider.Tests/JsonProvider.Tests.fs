@@ -71,7 +71,6 @@ module ObjectTests =
     let ``Property null test`` () =
         let data = NullType.GetSample().Data
         
-        Assert.AreEqual(typeof<string>, data.GetType())
         Assert.IsNull(data)
     
     type SameNameDifferentCaseType = JsonProvider<"""{"data": 1, "Data ": 2, "dAtA": 3, "DaTa": 4}""">
@@ -84,3 +83,12 @@ module ObjectTests =
         Assert.AreEqual(11, sample.Data1)
         Assert.AreEqual(12, sample.DAtA)
         Assert.AreEqual(13, sample.DaTa)
+
+module MiscTests = 
+    
+    type RootNameCheckType = JsonProvider<"{}", "Something">
+
+    [<Test>]
+    let ``Root name setting test`` () = 
+        RootNameCheckType.Something() |> ignore
+        Assert.True(true)

@@ -4,17 +4,17 @@ namespace FSharp.Liminiens.JsonProvider
 
 open System
 open System.Linq
+open System.Collections.Generic
 open System.Text.RegularExpressions
 open Microsoft.FSharp.Quotations
 open ProviderImplementation.ProvidedTypes.UncheckedQuotations
-open ProviderImplementation
 open ProviderImplementation.ProvidedTypes
 
 [<AutoOpen>]
 module internal TypeProviderHelpers =
     let prettyName (name: string) =         
-        let trimAllWhitespace (str: string) = 
-            Regex.Replace(str, "\s+", "").Trim()
+        let trimInvalidChars (str: string) = 
+            Regex.Replace(str, "[\s\W]+", "")
         let toTitleCase (str: string) = 
             if str.Length > 1 then
                 [|yield Char.ToUpper(str.[0]); yield! str.Skip(1)|]
@@ -23,13 +23,13 @@ module internal TypeProviderHelpers =
                 Char.ToUpper(str.[0]).ToString()
             else
                 String.Empty
-        name |> trimAllWhitespace |> toTitleCase
+        name |> trimInvalidChars |> toTitleCase
         
     let getPropertyNameAttribute name =
         { new Reflection.CustomAttributeData() with
             member __.Constructor =  typeof<Newtonsoft.Json.JsonPropertyAttribute>.GetConstructor([|typeof<string>|])
-            member __.ConstructorArguments = [|Reflection.CustomAttributeTypedArgument(typeof<string>, name)|] :> System.Collections.Generic.IList<_>
-            member __.NamedArguments = [||] :> System.Collections.Generic.IList<_> }
+            member __.ConstructorArguments = [|Reflection.CustomAttributeTypedArgument(typeof<string>, name)|] :> IList<_>
+            member __.NamedArguments = [||] :> IList<_> }
 
     let createType typeName =
         let typ = ProvidedTypeDefinition(typeName, baseType = Some typeof<obj>, isErased = false, isSealed = false)    
