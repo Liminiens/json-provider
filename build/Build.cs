@@ -3,6 +3,7 @@ using Nuke.Common.Git;
 using Nuke.Common.ProjectModel;
 using Nuke.Common.Tools.DotNet;
 using Nuke.Common.Tools.GitVersion;
+using Nuke.Common.Tools.Nunit;
 using Nuke.Common.Tools.Paket;
 using static Nuke.Common.IO.FileSystemTasks;
 using static Nuke.Common.IO.PathConstruction;
@@ -51,16 +52,20 @@ class Build : NukeBuild
                 .EnableNoRestore());
         });
 
+    Target Test => _ => _
+        .DependsOn(Compile)
+        .Executes(() =>
+        {
+        });
+
     Target Pack => _ => _
         .DependsOn(Compile)
         .Executes(() =>
         {
-            DotNetPack(s => s
-                .SetProject(Solution)
-                .SetVersion(GitVersion.NuGetVersionV2)
+            PaketTasks.PaketPack(s => s
+                .SetPackageVersion(GitVersion.NuGetVersionV2)
                 .SetOutputDirectory(OutputDirectory)
-                .SetConfiguration(Configuration)
-                .EnableNoBuild()
-                .EnableIncludeSymbols());
+                .SetBuildConfiguration(Configuration)
+                .EnableSymbols());
         });
 }
