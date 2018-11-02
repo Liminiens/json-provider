@@ -1,21 +1,53 @@
 # Add steps that run tests, create a NuGet package, deploy, and more:
 # https://docs.microsoft.com/azure/devops/pipelines/languages/dotnet-core
 
-pool:
-  vmImage: 'Ubuntu 16.04'
-
 variables:
   buildConfiguration: 'Release'
 
-steps:
-- script: mono .paket/paket.bootstrapper.exe
-  displayName: 'Download paket'
-  
-- script: mono ./.paket/paket.exe restore  
-  displayName: 'Manually restore'  
-  
-- script: dotnet build --configuration $(buildConfiguration)
-  displayName: 'dotnet build $(buildConfiguration)'
+trigger:
+  paths:
+    exclude:
+    - README.md
 
-- script: dotnet test --configuration $(buildConfiguration)
-  displayName: 'dotnet test $(buildConfiguration)'
+jobs:
+- job:
+  displayName: ubuntu_16_04
+  pool:
+    vmImage: 'Ubuntu 16.04'
+
+  steps:
+  - template: pipelines.non-windows.template.yml
+    
+  - script: dotnet build --configuration $(buildConfiguration)
+    displayName: 'dotnet build $(buildConfiguration)'
+
+  - script: dotnet test --configuration $(buildConfiguration)
+    displayName: 'dotnet test $(buildConfiguration)'
+
+- job:
+  displayName: vs2017_win2016
+  pool:
+    vmImage: 'vs2017-win2016'
+
+  steps:
+  - template: pipelines.windows.template.yml 
+    
+  - script: dotnet build --configuration $(buildConfiguration)
+    displayName: 'dotnet build $(buildConfiguration)'
+
+  - script: dotnet test --configuration $(buildConfiguration)
+    displayName: 'dotnet test $(buildConfiguration)'
+
+- job:
+  displayName: macOS_10_13
+  pool:
+    vmImage: 'macOS-10.13'
+
+  steps:
+  - template: pipelines.non-windows.template.yml 
+    
+  - script: dotnet build --configuration $(buildConfiguration)
+    displayName: 'dotnet build $(buildConfiguration)'
+
+  - script: dotnet test --configuration $(buildConfiguration)
+    displayName: 'dotnet test $(buildConfiguration)'
