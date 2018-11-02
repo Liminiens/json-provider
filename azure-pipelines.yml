@@ -4,6 +4,11 @@
 variables:
   buildConfiguration: 'Release'
 
+trigger:
+  paths:
+      exclude:
+      - *.md
+
 jobs:
 - job:
   displayName: ubuntu_16.04
