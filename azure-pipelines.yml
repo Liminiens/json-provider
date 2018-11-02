@@ -6,16 +6,12 @@ variables:
 
 jobs:
 - job:
-  displayName: ubuntu 16.04 job
+  displayName: ubuntu_16.04
   pool:
     vmImage: 'Ubuntu 16.04'
 
   steps:
-  - script: mono .paket/paket.bootstrapper.exe
-    displayName: 'Download paket'
-    
-  - script: mono ./.paket/paket.exe restore  
-    displayName: 'Paket restore'  
+  - template: pipelines.non-windows.template 
     
   - script: dotnet build --configuration $(buildConfiguration)
     displayName: 'dotnet build $(buildConfiguration)'
@@ -24,16 +20,12 @@ jobs:
     displayName: 'dotnet test $(buildConfiguration)'
 
 - job:
-  displayName: vs2017-win2016 job
+  displayName: vs2017_win2016
   pool:
     vmImage: 'vs2017-win2016'
 
   steps:
-  - script: .paket\paket.bootstrapper.exe
-    displayName: 'Download paket'
-    
-  - script: .\.paket\paket.exe restore  
-    displayName: 'Paket restore'  
+  - template: pipelines.windows.template 
     
   - script: dotnet build --configuration $(buildConfiguration)
     displayName: 'dotnet build $(buildConfiguration)'
@@ -42,16 +34,12 @@ jobs:
     displayName: 'dotnet test $(buildConfiguration)'
 
 - job:
-  displayName: macOS-10.13 job
+  displayName: macOS_10.13
   pool:
     vmImage: 'macOS-10.13'
 
   steps:
-  - script: mono .paket/paket.bootstrapper.exe
-    displayName: 'Download paket'
-    
-  - script: mono ./.paket/paket.exe restore  
-    displayName: 'Paket restore'  
+  - template: pipelines.non-windows.template 
     
   - script: dotnet build --configuration $(buildConfiguration)
     displayName: 'dotnet build $(buildConfiguration)'
