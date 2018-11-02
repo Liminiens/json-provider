@@ -1,21 +1,60 @@
 # Add steps that run tests, create a NuGet package, deploy, and more:
 # https://docs.microsoft.com/azure/devops/pipelines/languages/dotnet-core
 
-pool:
-  vmImage: 'Ubuntu 16.04'
-
 variables:
   buildConfiguration: 'Release'
 
-steps:
-- script: mono .paket/paket.bootstrapper.exe
-  displayName: 'Download paket'
-  
-- script: mono ./.paket/paket.exe restore  
-  displayName: 'Manually restore'  
-  
-- script: dotnet build --configuration $(buildConfiguration)
-  displayName: 'dotnet build $(buildConfiguration)'
+jobs:
+- job:
+  displayName: ubuntu 16.04 job
+  pool:
+    vmImage: 'Ubuntu 16.04'
 
-- script: dotnet test --configuration $(buildConfiguration)
-  displayName: 'dotnet test $(buildConfiguration)'
+  steps:
+  - script: mono .paket/paket.bootstrapper.exe
+    displayName: 'Download paket'
+    
+  - script: mono ./.paket/paket.exe restore  
+    displayName: 'Paket restore'  
+    
+  - script: dotnet build --configuration $(buildConfiguration)
+    displayName: 'dotnet build $(buildConfiguration)'
+
+  - script: dotnet test --configuration $(buildConfiguration)
+    displayName: 'dotnet test $(buildConfiguration)'
+
+- job:
+  displayName: vs2017-win2016 job
+  pool:
+    vmImage: 'vs2017-win2016'
+
+  steps:
+  - script: .paket\paket.bootstrapper.exe
+    displayName: 'Download paket'
+    
+  - script: .\.paket\paket.exe restore  
+    displayName: 'Paket restore'  
+    
+  - script: dotnet build --configuration $(buildConfiguration)
+    displayName: 'dotnet build $(buildConfiguration)'
+
+  - script: dotnet test --configuration $(buildConfiguration)
+    displayName: 'dotnet test $(buildConfiguration)'
+
+- job:
+  displayName: macOS-10.13 job
+  pool:
+    vmImage: 'macOS-10.13'
+
+  steps:
+  - script: mono .paket/paket.bootstrapper.exe
+    displayName: 'Download paket'
+    
+  - script: mono ./.paket/paket.exe restore  
+    displayName: 'Paket restore'  
+    
+  - script: dotnet build --configuration $(buildConfiguration)
+    displayName: 'dotnet build $(buildConfiguration)'
+
+  - script: dotnet test --configuration $(buildConfiguration)
+    displayName: 'dotnet test $(buildConfiguration)'
