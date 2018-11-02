@@ -11,7 +11,7 @@ jobs:
     vmImage: 'Ubuntu 16.04'
 
   steps:
-  - template: pipelines.non-windows.template 
+  - template: pipelines.non-windows.template.yml
     
   - script: dotnet build --configuration $(buildConfiguration)
     displayName: 'dotnet build $(buildConfiguration)'
@@ -25,7 +25,7 @@ jobs:
     vmImage: 'vs2017-win2016'
 
   steps:
-  - template: pipelines.windows.template 
+  - template: pipelines.windows.template.yml 
     
   - script: dotnet build --configuration $(buildConfiguration)
     displayName: 'dotnet build $(buildConfiguration)'
@@ -39,7 +39,7 @@ jobs:
     vmImage: 'macOS-10.13'
 
   steps:
-  - template: pipelines.non-windows.template 
+  - template: pipelines.non-windows.template.yml 
     
   - script: dotnet build --configuration $(buildConfiguration)
     displayName: 'dotnet build $(buildConfiguration)'
