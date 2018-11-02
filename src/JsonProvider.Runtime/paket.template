@@ -1,9 +1,9 @@
 type file
 id JsonProvider
 authors
-    Steffen Forkmann, Gustavo Guerra, JohnDoeKyrgyz, Don Syme
+    Liminiens, github contributors
 owners
-    Steffen Forkmann, Gustavo Guerra, JohnDoeKyrgyz, Don Syme
+    Liminiens, github contributors
 projectUrl
     http://github.com/fsprojects/JsonProvider
 iconUrl
@@ -13,11 +13,11 @@ licenseUrl
 requireLicenseAcceptance
     false
 tags
-    F# fsharp typeproviders JsonProvider
+    F# fsharp typeproviders JsonProvider json json.net
 summary
-    This library is for the .NET platform implementing JsonProvider.
+    Json generative type provider for F# and .NET.
 description
-    This library is for the .NET platform implementing JsonProvider.
+    Json generative type provider for F# and .NET.
 tags
     F# fsharp typeproviders JsonProvider
 files
