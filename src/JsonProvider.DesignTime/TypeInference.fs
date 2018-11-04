@@ -23,6 +23,8 @@ module TypeInference =
         | Property of JProperty
         | Array of JArray
         | Value of JsonValue        
+    
+    let defaultRootTypeName = "Root"
 
     let readToken =
         let minValue = int64 Int32.MinValue
@@ -151,7 +153,12 @@ module TypeInference =
                 defaultName
 
         let rootType =
-            let typeName = settings.RootTypeName
+            let typeName = 
+                match String.IsNullOrWhiteSpace(settings.RootTypeName) with
+                | true ->
+                    defaultRootTypeName
+                | false ->
+                    settings.RootTypeName
             Logging.log <| sprintf "Root type name: %s" typeName
             createTypeDefinition typeName
         

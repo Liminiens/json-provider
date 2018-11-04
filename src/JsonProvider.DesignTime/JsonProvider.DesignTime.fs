@@ -73,7 +73,7 @@ type JsonProvider (config : TypeProviderConfig) as this =
 
     let staticParameters =
         [ ProvidedStaticParameter("Sample", typeof<string>, parameterDefaultValue = "");
-          ProvidedStaticParameter("RootTypeName", typeof<string>, parameterDefaultValue = "Root") ]
+          ProvidedStaticParameter("RootTypeName", typeof<string>, parameterDefaultValue = TypeInference.defaultRootTypeName) ]
 
     let generatedType =
         let providedType = ProvidedTypeDefinition(execAsm, ns, providerTypeName, baseType = Some typeof<obj>, isErased = false)
