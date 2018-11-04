@@ -15,8 +15,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{ED8079DD
 EndProject
 Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "JsonProvider.Tests", "tests\JsonProvider.Tests\JsonProvider.Tests.fsproj", "{CD444F1B-5F75-4977-9D31-4A9B658E7536}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "build", "build", "{0A0A805B-74C5-4E47-AAFB-A1F42598D728}"
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "build", "build\build.csproj", "{39791565-9FEA-4EBF-A20B-4EE6A322D036}"
 EndProject
 Global
