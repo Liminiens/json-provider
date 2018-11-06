@@ -92,3 +92,27 @@ module MiscTests =
     let ``Root name setting test`` () = 
         RootNameCheckType.Something() |> ignore
         Assert.True(true)
+
+    type RootNameEmptyType = JsonProvider<"{}", "">
+
+    [<Test>]
+    let ``Root name empty test`` () = 
+        RootNameEmptyType.Root() |> ignore
+        Assert.True(true)
+
+    type RootNameWhitespaceType = JsonProvider<"{}", " ">
+
+    [<Test>]
+    let ``Root name whitespace test`` () = 
+        RootNameWhitespaceType.Root() |> ignore
+        Assert.True(true)
+
+module JsonNetTests = 
+    
+    type DateCheckType = JsonProvider<"""{ "x": "2016-03-31T07:02:00+07:00" }""">
+
+    [<Test>]
+    let ``Date parsed correctly by Json.NET`` () = 
+        let value = DateCheckType.GetSample().X
+        
+        Assert.AreEqual("2016-03-31T07:02:00+07:00", value)

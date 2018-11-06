@@ -52,13 +52,13 @@ module internal TypeProviderHelpers =
             if not <| checkName prettyPropName then
                prettyPropName
             else 
-               let rec getUniqueName name count = 
+               let rec getNextProprtyName name count = 
                    let uniqueName = sprintf "%s%i" name count
                    if not <| checkName uniqueName then
                       uniqueName
                    else
-                      getUniqueName name (count + 1)
-               getUniqueName prettyPropName 1
+                      getNextProprtyName name (count + 1)
+               getNextProprtyName prettyPropName 1
                 
         let providedField = ProvidedField("_" + propertyName, typ)
         let providedProperty =
