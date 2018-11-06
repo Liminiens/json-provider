@@ -3,6 +3,8 @@ id FSharp.Data.JsonProvider
 include-pdbs true
 authors
     Liminiens, github contributors
+language
+    F#
 owners
     Liminiens, github contributors
 projectUrl
@@ -18,7 +20,7 @@ summary
 description
     Json generative type provider for F# and .NET.
 tags
-    F# fsharp typeproviders JsonProvider
+    F# fsharp typeproviders JsonProvider json json.net
 files
     bin/Release/net45/JsonProvider.Runtime.* ==> lib/net45
     bin/Release/netstandard2.0/JsonProvider.Runtime.* ==> lib/netstandard2.0
