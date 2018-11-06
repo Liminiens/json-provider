@@ -4,7 +4,7 @@ module JsonProviderImplementation
 open System.IO
 open System.Reflection
 open FSharp.Core.CompilerServices
-open FSharp.Liminiens.JsonProvider
+open FSharp.Data.JsonProvider
 open ProviderImplementation.ProvidedTypes
 
 // Put any utility helpers here
@@ -14,7 +14,7 @@ type JsonProvider (config : TypeProviderConfig) as this =
     inherit TypeProviderForNamespaces (config, assemblyReplacementMap=[("JsonProvider.DesignTime", "JsonProvider.Runtime")], addDefaultProbingLocation=true)
 
     let providerTypeName = "JsonProvider"
-    let ns = "FSharp.Liminiens.JsonProvider"
+    let ns = "FSharp.Data.JsonProvider"
     let execAsm = Assembly.GetExecutingAssembly()
 
     do execAsm.Location |> Path.GetDirectoryName |> this.RegisterProbingFolder

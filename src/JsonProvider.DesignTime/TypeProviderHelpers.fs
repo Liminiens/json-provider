@@ -1,6 +1,6 @@
 ﻿#nowarn "0025"
 
-namespace FSharp.Liminiens.JsonProvider
+namespace FSharp.Data.JsonProvider
 
 open System
 open System.Linq

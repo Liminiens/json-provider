@@ -1,4 +1,4 @@
-namespace FSharp.Liminiens.JsonProvider
+namespace FSharp.Data.JsonProvider
 
 open Newtonsoft.Json
 open Newtonsoft.Json.Linq

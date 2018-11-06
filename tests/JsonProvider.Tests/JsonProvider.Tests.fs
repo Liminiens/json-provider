@@ -1,6 +1,6 @@
 module JsonProviderTests
 
-open FSharp.Liminiens.JsonProvider
+open FSharp.Data.JsonProvider
 open NUnit.Framework
 open Newtonsoft.Json.Linq
 

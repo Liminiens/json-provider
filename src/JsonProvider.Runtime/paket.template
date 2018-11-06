@@ -1,5 +1,5 @@
 type file
-id JsonProvider
+id FSharp.Data.JsonProvider
 include-pdbs true
 authors
     Liminiens, github contributors
