@@ -1,6 +1,6 @@
 # Json generative type provider
 
-
+This is a F# type provider which allows you to generate types from json sample and then use them in F#\C# project.
 
 ## Status
 
@@ -19,5 +19,5 @@ Building:
     .paket\paket.exe update
 
     dotnet build -c release
-
-    .paket\paket.exe pack src\JsonProvider.Runtime\paket.template --version 0.0.1
+    
+    .paket\paket.exe pack --build-config Release --version 0.1.0 .\output
