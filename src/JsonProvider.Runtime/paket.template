@@ -1,5 +1,6 @@
 type file
 id JsonProvider
+include-pdbs true
 authors
     Liminiens, github contributors
 owners
@@ -30,10 +31,4 @@ references
     JsonProvider.Runtime.dll
 dependencies
   FSharp.Core >= LOCKEDVERSION
-
-# put any package references here
-#  Some.Package
-#  framework: netcoreapp2.0
-#    System.Text.Encoding.CodePages >= LOCKEDVERSION
-#  framework: netstandard2.0
-#    System.Text.Encoding.CodePages >= LOCKEDVERSION
+  Newtonsoft.Json >= LOCKEDVERSION
