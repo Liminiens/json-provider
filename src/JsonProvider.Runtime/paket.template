@@ -6,11 +6,9 @@ authors
 owners
     Liminiens, github contributors
 projectUrl
-    http://github.com/fsprojects/JsonProvider
-iconUrl
-    https://raw.githubusercontent.com/fsprojects/JsonProvider/master/docs/files/img/logo.png
+    https://github.com/Liminiens/json-provider
 licenseUrl
-    http://github.com/fsprojects/JsonProvider/blob/master/LICENSE.txt
+    https://github.com/Liminiens/json-provider/blob/master/LICENSE.txt
 requireLicenseAcceptance
     false
 tags
