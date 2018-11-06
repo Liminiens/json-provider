@@ -62,16 +62,21 @@ module TypeInference =
 
         let checkType predicate = 
             tokens |> List.forall predicate
-        
-        let isPrimitive = (function Value(_) -> true | _ -> false)
 
-        let isInt = (function (Value(Int)) -> true | _ -> false)
+        let isPrimitive = 
+            function Value(_) -> true | _ -> false
 
-        let isLong = (function (Value(Long)) -> true | _ -> false)
+        let isInt = 
+            function (Value(Int)) -> true | _ -> false
 
-        let isFloat = (function (Value(Float)) -> true | _ -> false)
+        let isLong = 
+            function (Value(Long)) -> true | _ -> false
 
-        let isBoolean = (function (Value(Boolean)) -> true | _ -> false)
+        let isFloat = 
+            function (Value(Float)) -> true | _ -> false
+
+        let isBoolean = 
+            function (Value(Boolean)) -> true | _ -> false
 
         let isFloatOrInt value = 
             match value with 
