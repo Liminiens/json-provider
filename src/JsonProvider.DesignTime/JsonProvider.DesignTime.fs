@@ -72,8 +72,13 @@ type JsonProvider (config : TypeProviderConfig) as this =
         tpType
 
     let staticParameters =
-        [ ProvidedStaticParameter("Sample", typeof<string>, parameterDefaultValue = "");
-          ProvidedStaticParameter("RootTypeName", typeof<string>, parameterDefaultValue = TypeInference.defaultRootTypeName) ]
+        let sampleParameter = 
+            ProvidedStaticParameter("Sample", typeof<string>, parameterDefaultValue = "")
+        sampleParameter.AddXmlDoc("Json sample string")
+        let rootTypeNameParameter = 
+            ProvidedStaticParameter("RootTypeName", typeof<string>, parameterDefaultValue = TypeInference.defaultRootTypeName)
+        rootTypeNameParameter.AddXmlDoc("Type name for json object root")
+        [ sampleParameter; rootTypeNameParameter ]
 
     let generatedType =
         let providedType = ProvidedTypeDefinition(execAsm, ns, providerTypeName, baseType = Some typeof<obj>, isErased = false)
