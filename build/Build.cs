@@ -35,7 +35,7 @@ class Build : NukeBuild
         .DependsOn(Clean)
         .Executes(() =>
         {
-            PaketTasks.PaketRestore(s => s.SetProjectFile(Solution));
+            DotNetRestore();
         });
 
     Target Compile => _ => _
@@ -44,11 +44,11 @@ class Build : NukeBuild
         {
             DotNetBuild(s => s
                 .SetProjectFile(Solution)
+                .EnableNoRestore()
                 .SetConfiguration(Configuration)
                 .SetAssemblyVersion(GitVersion.GetNormalizedAssemblyVersion())
                 .SetFileVersion(GitVersion.GetNormalizedFileVersion())
-                .SetInformationalVersion(GitVersion.InformationalVersion)
-                .EnableNoRestore());
+                .SetInformationalVersion(GitVersion.InformationalVersion));
         });
 
     Target Test => _ => _
@@ -62,10 +62,12 @@ class Build : NukeBuild
         .DependsOn(Compile)
         .Executes(() =>
         {
-            PaketTasks.PaketPack(s => s
-                .SetPackageVersion(GitVersion.NuGetVersionV2)
+            DotNetPack(s => s
+                .SetProject(Solution)
+                .EnableNoBuild()
+                .SetConfiguration(Configuration)
+                .EnableIncludeSymbols()
                 .SetOutputDirectory(OutputDirectory)
-                .SetBuildConfiguration(Configuration)
-                .EnableSymbols());
+                .SetVersion(GitVersion.NuGetVersionV2));
         });
 }
