@@ -1,4 +1,4 @@
-﻿namespace FSharp.Liminiens.JsonProvider
+﻿namespace FSharp.Data.JsonProvider
 
 module Logging = 
     open System

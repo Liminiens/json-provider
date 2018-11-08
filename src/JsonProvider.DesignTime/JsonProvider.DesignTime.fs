@@ -4,7 +4,7 @@ module JsonProviderImplementation
 open System.IO
 open System.Reflection
 open FSharp.Core.CompilerServices
-open FSharp.Liminiens.JsonProvider
+open FSharp.Data.JsonProvider
 open ProviderImplementation.ProvidedTypes
 
 // Put any utility helpers here
@@ -14,7 +14,7 @@ type JsonProvider (config : TypeProviderConfig) as this =
     inherit TypeProviderForNamespaces (config, assemblyReplacementMap=[("JsonProvider.DesignTime", "JsonProvider.Runtime")], addDefaultProbingLocation=true)
 
     let providerTypeName = "JsonProvider"
-    let ns = "FSharp.Liminiens.JsonProvider"
+    let ns = "FSharp.Data.JsonProvider"
     let execAsm = Assembly.GetExecutingAssembly()
 
     do execAsm.Location |> Path.GetDirectoryName |> this.RegisterProbingFolder
@@ -72,8 +72,13 @@ type JsonProvider (config : TypeProviderConfig) as this =
         tpType
 
     let staticParameters =
-        [ ProvidedStaticParameter("Sample", typeof<string>, parameterDefaultValue = "");
-          ProvidedStaticParameter("RootTypeName", typeof<string>, parameterDefaultValue = "Root") ]
+        let sampleParameter = 
+            ProvidedStaticParameter("Sample", typeof<string>, parameterDefaultValue = "")
+        sampleParameter.AddXmlDoc("Json sample string")
+        let rootTypeNameParameter = 
+            ProvidedStaticParameter("RootTypeName", typeof<string>, parameterDefaultValue = TypeInference.defaultRootTypeName)
+        rootTypeNameParameter.AddXmlDoc("Type name for json object root")
+        [ sampleParameter; rootTypeNameParameter ]
 
     let generatedType =
         let providedType = ProvidedTypeDefinition(execAsm, ns, providerTypeName, baseType = Some typeof<obj>, isErased = false)

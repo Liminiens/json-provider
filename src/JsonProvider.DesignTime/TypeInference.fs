@@ -1,4 +1,4 @@
-﻿namespace FSharp.Liminiens.JsonProvider
+﻿namespace FSharp.Data.JsonProvider
 
 type TypeInferenceSettings = { RootTypeName: string }
 
@@ -23,6 +23,8 @@ module TypeInference =
         | Property of JProperty
         | Array of JArray
         | Value of JsonValue        
+    
+    let defaultRootTypeName = "Root"
 
     let readToken =
         let minValue = int64 Int32.MinValue
@@ -60,16 +62,21 @@ module TypeInference =
 
         let checkType predicate = 
             tokens |> List.forall predicate
-        
-        let isPrimitive = (function Value(_) -> true | _ -> false)
 
-        let isInt = (function (Value(Int)) -> true | _ -> false)
+        let isPrimitive = 
+            function Value(_) -> true | _ -> false
 
-        let isLong = (function (Value(Long)) -> true | _ -> false)
+        let isInt = 
+            function (Value(Int)) -> true | _ -> false
 
-        let isFloat = (function (Value(Float)) -> true | _ -> false)
+        let isLong = 
+            function (Value(Long)) -> true | _ -> false
 
-        let isBoolean = (function (Value(Boolean)) -> true | _ -> false)
+        let isFloat = 
+            function (Value(Float)) -> true | _ -> false
+
+        let isBoolean = 
+            function (Value(Boolean)) -> true | _ -> false
 
         let isFloatOrInt value = 
             match value with 
@@ -139,7 +146,7 @@ module TypeInference =
             Logging.log <| sprintf "Generated type full name: %s" genType.FullName
             genType
 
-        let tryGetParentNameOrDefault (jToken: JToken) defaultName =
+        let getParentNameOrDefault (jToken: JToken) defaultName =
             match Option.ofObj jToken.Parent with
             | Some(parent) ->
                 match readToken parent with
@@ -151,45 +158,16 @@ module TypeInference =
                 defaultName
 
         let rootType =
-            let typeName = settings.RootTypeName
+            let typeName = 
+                match String.IsNullOrWhiteSpace(settings.RootTypeName) with
+                | true ->
+                    defaultRootTypeName
+                | false ->
+                    settings.RootTypeName
             Logging.log <| sprintf "Root type name: %s" typeName
             createTypeDefinition typeName
-        
-        let rec processArrayToken (generatedType: ProvidedTypeDefinition) (jArray: JArray) =           
-            let tokens =
-                jArray 
-                |> Seq.map readToken
-                |> List.ofSeq
-            
-            let arrayType = 
-                match tokens with
-                | DecimalType ->
-                    createArrayType typeof<decimal>
-                | LongType ->
-                    createArrayType typeof<int64>
-                | IntType ->
-                    createArrayType typeof<int32>
-                | BooleanType ->      
-                    createArrayType typeof<bool>
-                | StringType ->
-                    createArrayType typeof<string>
-                | MixedType ->
-                    typeof<JArray>               
-                | ObjectType ->
-                    let jObj =
-                        jArray 
-                        |> Seq.collect (fun jobj -> (jobj :?> JObject).Properties())
-                        |> Seq.distinctBy (fun prop -> prop.Name)
-                        |> List.ofSeq
-                        |> JObject
 
-                    processToken jObj (Some(generatedType))
-                    |> createArrayType
-            
-            Logging.log <| sprintf "Array type name: %s" arrayType.FullName
-            arrayType
-
-        and processToken (token: JToken) (generatedType: ProvidedTypeDefinition option) =
+        let rec processToken (token: JToken) (generatedType: ProvidedTypeDefinition option) =
             match readToken token with
             | Property(jProperty) ->
                 let name = jProperty.Name
@@ -217,7 +195,7 @@ module TypeInference =
                     | None ->
                         rootType
                     | Some(_) ->
-                        let typeName = tryGetParentNameOrDefault jObject "ProvidedType"
+                        let typeName = getParentNameOrDefault jObject "ProvidedType"
                         Logging.log <| sprintf "Object type name: %s" typeName
                         createTypeDefinition typeName
 
@@ -230,6 +208,7 @@ module TypeInference =
             | Array(jArray) ->
                 Logging.log "Start array processing"
                 let generatedType = Option.get generatedType
+                Logging.log <| sprintf "Array type name: %s" generatedType.FullName
                 processArrayToken generatedType jArray
             | Value(value) ->
                 match value with
@@ -243,5 +222,34 @@ module TypeInference =
                     typeof<string>
                 | Float ->
                     typeof<decimal>
+
+        and processArrayToken (generatedType: ProvidedTypeDefinition) (jArray: JArray) =           
+            let tokens =
+                jArray 
+                |> Seq.map readToken
+                |> List.ofSeq
+            
+            match tokens with
+            | DecimalType ->
+                createArrayType typeof<decimal>
+            | LongType ->
+                createArrayType typeof<int64>
+            | IntType ->
+                createArrayType typeof<int32>
+            | BooleanType ->      
+                createArrayType typeof<bool>
+            | StringType ->
+                createArrayType typeof<string>
+            | MixedType ->
+                typeof<JArray>               
+            | ObjectType ->
+                let jObj =
+                    jArray 
+                    |> Seq.collect (fun jobj -> (jobj :?> JObject).Properties())
+                    |> Seq.distinctBy (fun prop -> prop.Name)
+                    |> List.ofSeq
+                    |> JObject
+
+                processToken jObj (Some(generatedType)) |> createArrayType
 
         processToken root None

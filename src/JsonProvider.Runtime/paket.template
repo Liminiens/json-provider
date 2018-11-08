@@ -1,15 +1,16 @@
 type file
-id JsonProvider
+id FSharp.Data.JsonProvider
+include-pdbs true
 authors
     Liminiens, github contributors
+language
+    F#
 owners
     Liminiens, github contributors
 projectUrl
-    http://github.com/fsprojects/JsonProvider
-iconUrl
-    https://raw.githubusercontent.com/fsprojects/JsonProvider/master/docs/files/img/logo.png
+    https://github.com/Liminiens/json-provider
 licenseUrl
-    http://github.com/fsprojects/JsonProvider/blob/master/LICENSE.txt
+    https://github.com/Liminiens/json-provider/blob/master/LICENSE.txt
 requireLicenseAcceptance
     false
 tags
@@ -19,7 +20,7 @@ summary
 description
     Json generative type provider for F# and .NET.
 tags
-    F# fsharp typeproviders JsonProvider
+    F# fsharp typeproviders JsonProvider json json.net
 files
     bin/Release/net45/JsonProvider.Runtime.* ==> lib/net45
     bin/Release/netstandard2.0/JsonProvider.Runtime.* ==> lib/netstandard2.0
@@ -30,10 +31,4 @@ references
     JsonProvider.Runtime.dll
 dependencies
   FSharp.Core >= LOCKEDVERSION
-
-# put any package references here
-#  Some.Package
-#  framework: netcoreapp2.0
-#    System.Text.Encoding.CodePages >= LOCKEDVERSION
-#  framework: netstandard2.0
-#    System.Text.Encoding.CodePages >= LOCKEDVERSION
+  Newtonsoft.Json >= LOCKEDVERSION

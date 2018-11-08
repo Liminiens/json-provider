@@ -13,7 +13,7 @@ namespace JsonProvider.NetFrameworkExample
             Print(parsed);
         }
 
-        static void Print(ProviderExampleType.Root data)
+        static void Print(ProviderExampleType.SuperRoot data)
         {
             foreach (var el in data.Data)
             {
