@@ -13,13 +13,11 @@ open ProviderImplementation.ProvidedTypes
 module internal SampleLoading = 
     open System.Net
 
-    let (|RelativeFileResource|FileResource|WebResource|Json|ManifestResource|) (sample: string, ctx: Context) = 
+    let (|RelativeFileResource|FileResource|WebResource|Json|) (sample: string, ctx: Context) = 
         if sample.StartsWith("http") then
            WebResource
         elif sample.StartsWith("{") || sample.StartsWith("[") then
            Json
-        elif ctx.ResourceExits sample then
-           ManifestResource
         elif File.Exists(ctx.GetRelativeFile sample) then
            RelativeFileResource
         elif File.Exists(sample) then
@@ -27,7 +25,7 @@ module internal SampleLoading =
         else
            Json
 
-    let load (encoding: Encoding) (sample: string) (ctx: Context) (watch: bool)= 
+    let load (encoding: Encoding) (sample: string) (ctx: Context) = 
         let sample = sample.Trim()
         let readFile file = 
             if File.Exists(file) then
@@ -38,8 +36,6 @@ module internal SampleLoading =
         | WebResource ->
             let response = WebRequest.Create(sample).GetResponse()
             response.GetResponseStream() |> readStream encoding
-        | ManifestResource ->
-            ctx.GetResourceStream sample |> readStream encoding
         | RelativeFileResource ->
             let file = ctx.GetRelativeFile sample
             readFile file
@@ -77,7 +73,7 @@ type JsonProvider (config : TypeProviderConfig) as this =
         
         let encoding = Encoding.GetEncoding(args.[2] :?> string)
         let rootTypeName = args.[1] :?> string
-        let sample = SampleLoading.load encoding (args.[0] :?> string) context watch
+        let sample = SampleLoading.load encoding (args.[0] :?> string) context
 
         let tokenizedSample = parseSample sample
 

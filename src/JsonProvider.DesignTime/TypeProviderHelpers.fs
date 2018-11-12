@@ -100,31 +100,6 @@ module internal TypeProviderHelpers =
 type Context(tp: TypeProviderForNamespaces, resolutionFolder: string) =
 
     member __.ResolutionFolder = resolutionFolder
-
-    member __.ResourceExits(resourceName: string) = 
-        match resourceName.Split(',') with
-        | [| asmName; name |] -> 
-            let bindingCtx = tp.TargetContext
-            match bindingCtx.TryBindSimpleAssemblyNameToTarget(asmName.Trim()) with
-            | Choice1Of2 asm -> 
-                asm.GetManifestResourceNames()
-                |> Array.contains (name.Trim())
-            | _ -> 
-                false
-        | _ -> 
-            false
-    
-    member __.GetResourceStream(resourceName: string) = 
-        match resourceName.Split(',') with
-        | [| asmName; name |] -> 
-            let bindingCtx = tp.TargetContext
-            match bindingCtx.TryBindSimpleAssemblyNameToTarget(asmName.Trim()) with
-            | Choice1Of2 asm -> 
-                asm.GetManifestResourceStream(name.Trim())
-            | Choice2Of2 e -> 
-                raise e
-        | _ -> 
-            failwith <| sprintf "Failed to read resource or find it's assembly \"%s\"" resourceName
     
     member __.GetRelativeFile(relativePath: string) =         
         let replaceAltChars (str: string) =         
