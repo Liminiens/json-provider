@@ -148,7 +148,7 @@ module HttpTests =
         Assert.IsNotNull(data.Title)
 
 module FileTests = 
-    type FileType = JsonProvider<"""files\example.json""">
+    type FileType = JsonProvider<"""files/example.json""">
 
     type FileAltCharTestType = JsonProvider<"""files/example.json""">
 
