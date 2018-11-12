@@ -157,7 +157,7 @@ module TypeInference =
             | None ->
                 defaultName
 
-        let rootType =
+        let createRootType() =
             let typeName = 
                 match String.IsNullOrWhiteSpace(settings.RootTypeName) with
                 | true ->
@@ -188,28 +188,23 @@ module TypeInference =
                 Logging.log <| sprintf "Property declaring type full name: %s" field.DeclaringType.FullName
 
                 generatedType :> Type
-
             | Object(jObject) ->
                 let generatedType =
                     match generatedType with
                     | None ->
-                        rootType
+                        createRootType()
                     | Some(_) ->
                         let typeName = getParentNameOrDefault jObject "ProvidedType"
                         Logging.log <| sprintf "Object type name: %s" typeName
                         createTypeDefinition typeName
-
                 Logging.log <| sprintf "Object type full name: %s" generatedType.FullName
 
                 jObject
                 |> Seq.iter (fun prop -> processToken prop (Some(generatedType)) |> ignore)
 
                 generatedType :> Type
-            | Array(jArray) ->
-                Logging.log "Start array processing"
-                let generatedType = Option.get generatedType
-                Logging.log <| sprintf "Array type name: %s" generatedType.FullName
-                processArrayToken generatedType jArray
+            | Array(jArray) ->                     
+                processArrayToken jArray
             | Value(value) ->
                 match value with
                 | Boolean ->
@@ -223,7 +218,7 @@ module TypeInference =
                 | Float ->
                     typeof<decimal>
 
-        and processArrayToken (generatedType: ProvidedTypeDefinition) (jArray: JArray) =           
+        and processArrayToken (jArray: JArray) =           
             let tokens =
                 jArray 
                 |> Seq.map readToken
@@ -250,6 +245,6 @@ module TypeInference =
                     |> List.ofSeq
                     |> JObject
 
-                processToken jObj (Some(generatedType)) |> createArrayType
+                processToken jObj None |> createArrayType
 
         processToken root None

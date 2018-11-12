@@ -16,9 +16,6 @@ module Json =
         settings.DateParseHandling <- DateParseHandling.None
         JsonConvert.DeserializeObject(json, typ, settings)
 
-    let parse (sample: string) = 
-        JObject.Parse(sample)
-
 // Put the TypeProviderAssemblyAttribute in the runtime DLL, pointing to the design-time DLL
 [<assembly:CompilerServices.TypeProviderAssembly("JsonProvider.DesignTime.dll")>]
 do ()

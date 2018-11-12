@@ -1,17 +1,21 @@
 ﻿#nowarn "0025"
+#nowarn "0067"
 
 namespace FSharp.Data.JsonProvider
 
-open System
-open System.Linq
-open System.Collections.Generic
-open System.Text.RegularExpressions
+open System.IO
 open Microsoft.FSharp.Quotations
 open ProviderImplementation.ProvidedTypes.UncheckedQuotations
 open ProviderImplementation.ProvidedTypes
 
 [<AutoOpen>]
 module internal TypeProviderHelpers =
+    open System
+    open System.Text
+    open System.Linq
+    open System.Collections.Generic
+    open System.Text.RegularExpressions
+
     let prettyName (name: string) =         
         let trimInvalidChars (str: string) = 
             Regex.Replace(str, "[\s\W]+", "")
@@ -74,3 +78,81 @@ module internal TypeProviderHelpers =
         providedField, providedProperty 
     
     let createArrayType (ty: Type) = ty.MakeArrayType()
+  
+    let readStream (encoding: Encoding) (stream: Stream) =    
+        use reader = new StreamReader(stream, encoding)
+        reader.ReadToEnd()
+
+    let tryFirst (parameter: 'T) (actions: list<'T -> 'TResult>) =
+        let rec tryExecute actionsToTry lastErrorMsg =
+            match actionsToTry with
+            | action :: tail ->
+                try
+                    Ok(action parameter)
+                with
+                | :? Exception as e -> 
+                    tryExecute tail e.Message
+            | _ ->
+               Error(lastErrorMsg)
+        tryExecute actions ""
+
+type Context(tp: TypeProviderForNamespaces, resolutionFolder: string) =
+
+    member __.ResolutionFolder = resolutionFolder
+
+    member __.ResourceExits(resourceName: string) = 
+        match resourceName.Split(',') with
+        | [| asmName; name |] -> 
+            let bindingCtx = tp.TargetContext
+            match bindingCtx.TryBindSimpleAssemblyNameToTarget(asmName.Trim()) with
+            | Choice1Of2 asm -> 
+                asm.GetManifestResourceNames()
+                |> Array.contains (name.Trim())
+            | _ -> 
+                false
+        | _ -> 
+            false
+    
+    member __.GetResourceStream(resourceName: string) = 
+        match resourceName.Split(',') with
+        | [| asmName; name |] -> 
+            let bindingCtx = tp.TargetContext
+            match bindingCtx.TryBindSimpleAssemblyNameToTarget(asmName.Trim()) with
+            | Choice1Of2 asm -> 
+                asm.GetManifestResourceStream(name.Trim())
+            | Choice2Of2 e -> 
+                raise e
+        | _ -> 
+            failwith <| sprintf "Failed to read resource or find it's assembly \"%s\"" resourceName
+    
+    member __.GetRelativeFile(relativePath: string) =   
+        let replaceAltChars (str: string) =
+            str.Replace(Path.AltDirectorySeparatorChar, Path.DirectorySeparatorChar)
+        Path.GetFullPath(Path.Combine(resolutionFolder, replaceAltChars relativePath))
+
+    member __.Watch(file: string) = 
+        let watcher =
+            new FileSystemWatcher(Path.GetDirectoryName(file), IncludeSubdirectories = false,
+                    NotifyFilter = (NotifyFilters.CreationTime |||
+                                    NotifyFilters.Size |||
+                                    NotifyFilters.DirectoryName |||
+                                    NotifyFilters.FileName))
+        let onChanged = 
+            (fun (fsargs : FileSystemEventArgs) ->
+                match fsargs.ChangeType with
+                | WatcherChangeTypes.Changed 
+                | WatcherChangeTypes.Created 
+                | WatcherChangeTypes.Deleted -> 
+                    if fsargs.FullPath = file then
+                        tp.Invalidate()
+                | _ -> ())
+
+        try
+            watcher.Deleted.Add onChanged
+            watcher.Renamed.Add onChanged
+            watcher.Created.Add onChanged
+            watcher.EnableRaisingEvents <- true
+            watcher.Error.Add (fun _ -> watcher.Dispose())
+            tp.Disposing.Add (fun _ -> watcher.Dispose())
+        with
+        | _ -> watcher.Dispose()
