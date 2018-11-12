@@ -7,6 +7,7 @@ open System.IO
 open Microsoft.FSharp.Quotations
 open ProviderImplementation.ProvidedTypes.UncheckedQuotations
 open ProviderImplementation.ProvidedTypes
+open System
 
 [<AutoOpen>]
 module internal TypeProviderHelpers =
@@ -125,9 +126,9 @@ type Context(tp: TypeProviderForNamespaces, resolutionFolder: string) =
         | _ -> 
             failwith <| sprintf "Failed to read resource or find it's assembly \"%s\"" resourceName
     
-    member __.GetRelativeFile(relativePath: string) =   
+    member __.GetRelativeFile(relativePath: string) =
         let replaceAltChars (str: string) =
-            str.Replace(Path.AltDirectorySeparatorChar, Path.DirectorySeparatorChar)
+            str.Replace('\\', Path.DirectorySeparatorChar)
         Path.GetFullPath(Path.Combine(resolutionFolder, replaceAltChars relativePath))
 
     member __.Watch(file: string) = 
