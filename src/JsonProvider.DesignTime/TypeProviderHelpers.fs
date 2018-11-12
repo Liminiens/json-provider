@@ -126,9 +126,13 @@ type Context(tp: TypeProviderForNamespaces, resolutionFolder: string) =
         | _ -> 
             failwith <| sprintf "Failed to read resource or find it's assembly \"%s\"" resourceName
     
-    member __.GetRelativeFile(relativePath: string) =
-        let replaceAltChars (str: string) =
-            str.Replace('\\', Path.DirectorySeparatorChar)
+    member __.GetRelativeFile(relativePath: string) =         
+        let replaceAltChars (str: string) =         
+            match Environment.OSVersion.Platform with
+            | PlatformID.Unix | PlatformID.MacOSX ->
+                str.Replace('\\', Path.DirectorySeparatorChar)
+            | _ ->
+                str.Replace(Path.AltDirectorySeparatorChar, Path.DirectorySeparatorChar)
         Path.GetFullPath(Path.Combine(resolutionFolder, replaceAltChars relativePath))
 
     member __.Watch(file: string) = 
