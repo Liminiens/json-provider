@@ -134,30 +134,3 @@ type Context(tp: TypeProviderForNamespaces, resolutionFolder: string) =
             | _ ->
                 str.Replace(Path.AltDirectorySeparatorChar, Path.DirectorySeparatorChar)
         Path.GetFullPath(Path.Combine(resolutionFolder, replaceAltChars relativePath))
-
-    member __.Watch(file: string) = 
-        let watcher =
-            new FileSystemWatcher(Path.GetDirectoryName(file), IncludeSubdirectories = false,
-                    NotifyFilter = (NotifyFilters.CreationTime |||
-                                    NotifyFilters.Size |||
-                                    NotifyFilters.DirectoryName |||
-                                    NotifyFilters.FileName))
-        let onChanged = 
-            (fun (fsargs : FileSystemEventArgs) ->
-                match fsargs.ChangeType with
-                | WatcherChangeTypes.Changed 
-                | WatcherChangeTypes.Created 
-                | WatcherChangeTypes.Deleted -> 
-                    if fsargs.FullPath = file then
-                        tp.Invalidate()
-                | _ -> ())
-
-        try
-            watcher.Deleted.Add onChanged
-            watcher.Renamed.Add onChanged
-            watcher.Created.Add onChanged
-            watcher.EnableRaisingEvents <- true
-            watcher.Error.Add (fun _ -> watcher.Dispose())
-            tp.Disposing.Add (fun _ -> watcher.Dispose())
-        with
-        | _ -> watcher.Dispose()

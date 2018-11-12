@@ -42,17 +42,9 @@ module internal SampleLoading =
             ctx.GetResourceStream sample |> readStream encoding
         | RelativeFileResource ->
             let file = ctx.GetRelativeFile sample
-            if watch then 
-                ctx.Watch file 
-                readFile file
-            else
-                readFile file
+            readFile file
         | FileResource ->
-            if watch then 
-                ctx.Watch sample 
-                readFile sample
-            else
-                readFile sample
+            readFile sample
         | Json ->
             sample              
 
@@ -82,8 +74,7 @@ type JsonProvider (config : TypeProviderConfig) as this =
 
     let buildStaticParameters (typeName: string) (args: obj[]) =  
         let context = Context(this, config.ResolutionFolder)
-
-        let watch = args.[3] :?> bool
+        
         let encoding = Encoding.GetEncoding(args.[2] :?> string)
         let rootTypeName = args.[1] :?> string
         let sample = SampleLoading.load encoding (args.[0] :?> string) context watch
@@ -136,15 +127,13 @@ type JsonProvider (config : TypeProviderConfig) as this =
     let staticParameters =
         [ ProvidedStaticParameter("Sample", typeof<string>, parameterDefaultValue = ""); 
           ProvidedStaticParameter("RootTypeName", typeof<string>, parameterDefaultValue = TypeInference.defaultRootTypeName); 
-          ProvidedStaticParameter("Encoding", typeof<string>, parameterDefaultValue = "UTF-8");
-          ProvidedStaticParameter("Watch", typeof<bool>, parameterDefaultValue = false)]
+          ProvidedStaticParameter("Encoding", typeof<string>, parameterDefaultValue = "UTF-8");]
 
     let summaryText = 
         """<summary>A json typed representation</summary>
            <param name='Sample'>Json sample, url to json resource, relative or absolute path to a file, name of an assembly manifest resource</param>       
            <param name='RootTypeName'>The name to be used for the root type. Defaults to 'Root'.</param>
-           <param name='Encoding'>Sample encoding, default is 'UTF-8'</param>
-           <param name='Watch'>Watch file for changes or not, default is false</param>"""
+           <param name='Encoding'>Sample encoding, default is 'UTF-8'</param>"""
 
     let generatedType =
         let providedType = ProvidedTypeDefinition(execAsm, ns, providerTypeName, baseType = Some typeof<obj>, isErased = false)
