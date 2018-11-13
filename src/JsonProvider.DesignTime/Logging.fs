@@ -1,9 +1,8 @@
 ﻿namespace FSharp.Data.JsonProvider
 
-module Logging = 
+module internal Logging = 
     open System
     open System.IO
-    open Newtonsoft.Json.Linq
 
     let log =
         #if DEBUG

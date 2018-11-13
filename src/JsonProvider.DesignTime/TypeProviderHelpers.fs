@@ -1,17 +1,23 @@
 ﻿#nowarn "0025"
+#nowarn "0067"
 
 namespace FSharp.Data.JsonProvider
 
-open System
-open System.Linq
-open System.Collections.Generic
-open System.Text.RegularExpressions
 open Microsoft.FSharp.Quotations
 open ProviderImplementation.ProvidedTypes.UncheckedQuotations
 open ProviderImplementation.ProvidedTypes
+open System
+open System.IO
 
 [<AutoOpen>]
 module internal TypeProviderHelpers =
+    open System
+    open System.Text
+    open System.Linq
+    open System.Collections.Generic
+    open System.Text.RegularExpressions
+    open System.Globalization
+
     let prettyName (name: string) =         
         let trimInvalidChars (str: string) = 
             Regex.Replace(str, "[\s\W]+", "")
@@ -74,3 +80,39 @@ module internal TypeProviderHelpers =
         providedField, providedProperty 
     
     let createArrayType (ty: Type) = ty.MakeArrayType()
+  
+    let readStream (encoding: Encoding) (stream: Stream) =    
+        use reader = new StreamReader(stream, encoding)
+        reader.ReadToEnd()
+
+    let tryFirst (parameter: 'T) (actions: list<'T -> 'TResult>) =
+        let rec tryExecute actionsToTry lastErrorMsg =
+            match actionsToTry with
+            | action :: tail ->
+                try
+                    Ok(action parameter)
+                with
+                | :? Exception as e -> 
+                    tryExecute tail e.Message
+            | [] ->
+               Error(lastErrorMsg)
+        tryExecute actions String.Empty
+    
+    let stringToBool (str: string) =
+        let str = str.ToLower(CultureInfo.InvariantCulture).Trim()
+        if str = "false" then Some(false)
+        elif str = "true" then Some(true)
+        else None
+
+type internal Context(tp: TypeProviderForNamespaces, resolutionFolder: string) =
+
+    member __.ResolutionFolder = resolutionFolder
+    
+    member __.GetRelativeFilePath(relativePath: string) =         
+        let replaceAltChars (str: string) =         
+            match Environment.OSVersion.Platform with
+            | PlatformID.Unix | PlatformID.MacOSX ->
+                str.Replace('\\', Path.DirectorySeparatorChar)
+            | _ ->
+                str.Replace(Path.AltDirectorySeparatorChar, Path.DirectorySeparatorChar)
+        Path.GetFullPath(Path.Combine(resolutionFolder, replaceAltChars relativePath))
