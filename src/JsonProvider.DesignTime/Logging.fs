@@ -3,7 +3,6 @@
 module Logging = 
     open System
     open System.IO
-    open Newtonsoft.Json.Linq
 
     let log =
         #if DEBUG

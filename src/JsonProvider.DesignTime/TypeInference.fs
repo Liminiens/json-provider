@@ -12,11 +12,11 @@ module TypeInference =
     open System.Collections.Generic
   
     type JsonValue =
-        | String
-        | Float
-        | Int
-        | Boolean
-        | Long
+        | String of string
+        | Float of decimal
+        | Int of int
+        | Boolean of bool
+        | Long of int64
 
     type JsonTokenType =
         | Object of JObject
@@ -41,22 +41,23 @@ module TypeInference =
             | JTokenType.Integer ->
                 let value = jToken.Value<int64>()
                 if value > maxValue || value < minValue then
-                    Value(Long)
+                    Value(Long(value))
                 else
-                    Value(Int)
+                    Value(Int(int value))
             | JTokenType.Float ->
-                Value(Float)
+                Value(Float(jToken.Value<decimal>()))
             | JTokenType.Boolean ->
-                Value(Boolean)
+                Value(Boolean(jToken.Value<bool>()))
             | JTokenType.Undefined
             | JTokenType.Null ->
-                Value(String)
+                Value(String(String.Empty))
             | _ ->
-                let tokenValue = jToken.Value<string>().ToLower(CultureInfo.InvariantCulture).Trim()
-                if tokenValue = "false" || tokenValue = "true" then
-                    Value(Boolean)
-                else
-                    Value(String)
+                let strValue = jToken.Value<string>()
+                match stringToBool strValue with
+                | Some(value) ->
+                    Value(Boolean(value))
+                | None ->
+                    Value(String(strValue))
 
     let (|IntType|LongType|DecimalType|BooleanType|StringType|ObjectType|MixedType|) (tokens: JsonTokenType list) = 
 
@@ -67,24 +68,24 @@ module TypeInference =
             function Value(_) -> true | _ -> false
 
         let isInt = 
-            function (Value(Int)) -> true | _ -> false
+            function (Value(Int(_))) -> true | _ -> false
 
         let isLong = 
-            function (Value(Long)) -> true | _ -> false
+            function (Value(Long(_))) -> true | _ -> false
 
         let isFloat = 
-            function (Value(Float)) -> true | _ -> false
+            function (Value(Float(_))) -> true | _ -> false
 
         let isBoolean = 
-            function (Value(Boolean)) -> true | _ -> false
+            function (Value(Boolean(_))) -> true | _ -> false
 
         let isFloatOrInt value = 
             match value with 
             | Value(valueType) ->
                 match valueType with 
-                | Float 
-                | Int 
-                | Long -> 
+                | Float(_) 
+                | Int(_) 
+                | Long(_) -> 
                     true 
                 | _ -> 
                     false
@@ -95,8 +96,8 @@ module TypeInference =
             match value with 
             | Value(valueType) ->
                 match valueType with 
-                | Int 
-                | Long -> 
+                | Int(_) 
+                | Long(_) -> 
                     true 
                 | _ -> 
                     false
@@ -207,15 +208,15 @@ module TypeInference =
                 processArrayToken jArray
             | Value(value) ->
                 match value with
-                | Boolean ->
+                | Boolean(_) ->
                     typeof<bool>
-                | Int ->
+                | Int(_) ->
                     typeof<int32>
-                | Long ->
+                | Long(_) ->
                     typeof<int64>
-                | String ->
+                | String(_) ->
                     typeof<string>
-                | Float ->
+                | Float(_) ->
                     typeof<decimal>
 
         and processArrayToken (jArray: JArray) =           

@@ -3,11 +3,11 @@
 
 namespace FSharp.Data.JsonProvider
 
-open System.IO
 open Microsoft.FSharp.Quotations
 open ProviderImplementation.ProvidedTypes.UncheckedQuotations
 open ProviderImplementation.ProvidedTypes
 open System
+open System.IO
 
 [<AutoOpen>]
 module internal TypeProviderHelpers =
@@ -16,6 +16,7 @@ module internal TypeProviderHelpers =
     open System.Linq
     open System.Collections.Generic
     open System.Text.RegularExpressions
+    open System.Globalization
 
     let prettyName (name: string) =         
         let trimInvalidChars (str: string) = 
@@ -93,15 +94,21 @@ module internal TypeProviderHelpers =
                 with
                 | :? Exception as e -> 
                     tryExecute tail e.Message
-            | _ ->
+            | [] ->
                Error(lastErrorMsg)
-        tryExecute actions ""
+        tryExecute actions String.Empty
+    
+    let stringToBool (str: string) =
+        let str = str.ToLower(CultureInfo.InvariantCulture).Trim()
+        if str = "false" then Some(false)
+        elif str = "true" then Some(true)
+        else None
 
 type Context(tp: TypeProviderForNamespaces, resolutionFolder: string) =
 
     member __.ResolutionFolder = resolutionFolder
     
-    member __.GetRelativeFile(relativePath: string) =         
+    member __.GetRelativeFilePath(relativePath: string) =         
         let replaceAltChars (str: string) =         
             match Environment.OSVersion.Platform with
             | PlatformID.Unix | PlatformID.MacOSX ->

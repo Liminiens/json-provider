@@ -80,6 +80,14 @@ module ArrayTests =
         
         Assert.AreEqual(1, sample.[0])
         Assert.AreEqual(2, sample.[1])
+    
+    type PlainObjectArrayType = JsonProvider<"""[{"Data": 1}]"""> 
+
+    [<Test>]
+    let ``Plain object array test`` () =
+        let sample = PlainObjectArrayType.GetSample()
+        
+        Assert.AreEqual(1, sample.[0].Data)
 
 module ObjectTests = 
     
@@ -124,6 +132,38 @@ module MiscTests =
     let ``Root name whitespace test`` () = 
         RootNameWhitespaceType.Root() |> ignore
         Assert.True(true)
+           
+    type StrangeBoolType = JsonProvider<"""["fAlSe", false, "TrUE"]""">
+
+    [<Test>]
+    let ``Strange bool parsed correctly`` () = 
+        let data = StrangeBoolType.GetSample()
+
+        Assert.False(data.[0])
+        Assert.False(data.[1])
+        Assert.True(data.[2])
+
+        let parsed = StrangeBoolType.Parse("""["TruE", false, "TRUE"]""")
+
+        Assert.True(parsed.[0])
+        Assert.False(parsed.[1])
+        Assert.True(parsed.[2])
+
+module JsonValueTests =
+    
+    type BoolType = JsonProvider<"false">
+    type IntType = JsonProvider<"123">
+    type StringType = JsonProvider< """ "Test" """>
+
+    [<Test>]
+    let ``Test value parser`` () = 
+        let boolValue = BoolType.GetSample()
+        let intValue = IntType.GetSample()
+        let stringValue = StringType.GetSample()
+
+        Assert.AreEqual(123, intValue)
+        Assert.AreEqual("Test", stringValue)
+        Assert.IsFalse(boolValue)
 
 module JsonNetTests = 
     
