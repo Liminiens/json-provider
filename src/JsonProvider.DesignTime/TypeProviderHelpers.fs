@@ -104,7 +104,7 @@ module internal TypeProviderHelpers =
         elif str = "true" then Some(true)
         else None
 
-type Context(tp: TypeProviderForNamespaces, resolutionFolder: string) =
+type internal Context(tp: TypeProviderForNamespaces, resolutionFolder: string) =
 
     member __.ResolutionFolder = resolutionFolder
     

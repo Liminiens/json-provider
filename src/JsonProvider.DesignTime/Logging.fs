@@ -1,6 +1,6 @@
 ﻿namespace FSharp.Data.JsonProvider
 
-module Logging = 
+module internal Logging = 
     open System
     open System.IO
 
