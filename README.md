@@ -1,3 +1,5 @@
+[![NuGet](https://img.shields.io/nuget/v/FSharp.Data.JsonProvider.svg)](https://www.nuget.org/packages/FSharp.Data.JsonProvider)
+
 # Json generative type provider
 
 This is a F# type provider which allows you to generate types from string json sample and then use them in F# or C# project.
