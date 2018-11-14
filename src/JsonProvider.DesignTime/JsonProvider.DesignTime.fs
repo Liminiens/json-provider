@@ -92,7 +92,7 @@ type JsonProvider (config : TypeProviderConfig) as this =
     do execAsm.Location |> Path.GetDirectoryName |> this.RegisterProbingFolder
 
     // check we contain a copy of runtime files, and are not referencing the runtime DLL
-    do assert (typeof<Marker>.Assembly.GetName().Name = execAsm.GetName().Name)         
+    do assert (typeof<``Asm marker``>.Assembly.GetName().Name = execAsm.GetName().Name)         
 
     let buildStaticParameters (typeName: string) (args: obj[]) =  
         let context = Context(this, config.ResolutionFolder)

@@ -5,7 +5,7 @@ open Newtonsoft.Json.Linq
 open System
 
 // Put any runtime constructs here
-type Marker() =
+type ``Asm marker``() =
   let dummy = ()
 
 // Put any utility helpers here
