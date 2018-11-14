@@ -90,7 +90,6 @@ module ArrayTests =
         Assert.AreEqual(1, sample.[0].Data)
 
 module ObjectTests = 
-    
     type NullType = JsonProvider<"""{"Data": null}""">
 
     [<Test>]
@@ -111,7 +110,6 @@ module ObjectTests =
         Assert.AreEqual(13, sample.DaTa)
 
 module MiscTests = 
-    
     type RootNameCheckType = JsonProvider<"{}", "Something">
 
     [<Test>]
@@ -148,9 +146,16 @@ module MiscTests =
         Assert.True(parsed.[0])
         Assert.False(parsed.[1])
         Assert.True(parsed.[2])
+    
+    type CaseTestType = JsonProvider<"""{"11__)123data-test_value space": 10}""">
+
+    [<Test>]
+    let ``Symbols and property case test`` () = 
+        let data = CaseTestType.GetSample()
+
+        Assert.AreEqual(10, data.DataTestValueSpace)
 
 module JsonValueTests =
-    
     type BoolType = JsonProvider<"false">
     type IntType = JsonProvider<"123">
     type StringType = JsonProvider< """ "Test" """>
@@ -166,7 +171,6 @@ module JsonValueTests =
         Assert.IsFalse(boolValue)
 
 module JsonNetTests = 
-    
     type DateCheckType = JsonProvider<"""{ "x": "2016-03-31T07:02:00+07:00" }""">
 
     [<Test>]

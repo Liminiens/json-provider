@@ -18,9 +18,8 @@ module internal TypeProviderHelpers =
     open System.Text.RegularExpressions
     open System.Globalization
 
-    let prettyName (name: string) =         
-        let trimInvalidChars (str: string) = 
-            Regex.Replace(str, "[\s\W]+", "")
+    let prettyName (name: string) = 
+        let name = String(name.SkipWhile(fun c -> not <| Char.IsLetter(c)).ToArray())
         let toTitleCase (str: string) = 
             if str.Length > 1 then
                 [|yield Char.ToUpper(str.[0]); yield! str.Skip(1)|]
@@ -28,8 +27,10 @@ module internal TypeProviderHelpers =
             elif str.Length = 1 then
                 Char.ToUpper(str.[0]).ToString()
             else
-                String.Empty
-        name |> trimInvalidChars |> toTitleCase
+                String.Empty        
+        Regex.Replace(name, "[\s\W_]+", " ").Split(' ')
+        |> Array.map toTitleCase
+        |> fun arr -> String.Join("", arr).Trim()
         
     let getPropertyNameAttribute name =
         { new Reflection.CustomAttributeData() with

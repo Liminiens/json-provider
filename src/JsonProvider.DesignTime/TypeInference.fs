@@ -1,8 +1,8 @@
 ﻿namespace FSharp.Data.JsonProvider
 
-type TypeInferenceSettings = { RootTypeName: string }
+type internal TypeInferenceSettings = { RootTypeName: string }
 
-module TypeInference =
+module internal TypeInference =
     open System
     open System.Linq
     open Newtonsoft.Json.Linq
