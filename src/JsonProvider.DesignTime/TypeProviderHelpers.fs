@@ -8,18 +8,21 @@ open ProviderImplementation.ProvidedTypes.UncheckedQuotations
 open ProviderImplementation.ProvidedTypes
 open System
 open System.IO
+open System.Text
 
 [<AutoOpen>]
 module internal TypeProviderHelpers =
-    open System
-    open System.Text
     open System.Linq
     open System.Collections.Generic
     open System.Text.RegularExpressions
     open System.Globalization
 
     let prettyName (name: string) = 
-        let name = String(name.SkipWhile(fun c -> not <| Char.IsLetter(c)).ToArray())
+        let name = 
+            name
+            |> Seq.skipWhile (fun c -> not <| Char.IsLetter(c))
+            |> Array.ofSeq
+            |> String
         let toTitleCase (str: string) = 
             if str.Length > 1 then
                 [|yield Char.ToUpper(str.[0]); yield! str.Skip(1)|]
@@ -30,7 +33,7 @@ module internal TypeProviderHelpers =
                 String.Empty        
         Regex.Replace(name, "[\s\W_]+", " ").Split(' ')
         |> Array.map toTitleCase
-        |> fun arr -> String.Join("", arr).Trim()
+        |> fun arr -> String.Join(String.Empty, arr).Trim()
         
     let getPropertyNameAttribute name =
         { new Reflection.CustomAttributeData() with
@@ -117,3 +120,20 @@ type internal Context(tp: TypeProviderForNamespaces, resolutionFolder: string) =
             | _ ->
                 str.Replace(Path.AltDirectorySeparatorChar, Path.DirectorySeparatorChar)
         Path.GetFullPath(Path.Combine(resolutionFolder, replaceAltChars relativePath))
+    
+    member __.ReadResource(resourceName: string, encoding: Encoding) =
+        match resourceName.Split(',') with
+        | [| asmName; name |] -> 
+            let asmName = asmName.Trim()
+            let bindingContext = tp.TargetContext
+            match bindingContext.TryBindSimpleAssemblyNameToTarget(asmName) with
+            | Choice1Of2 asm -> 
+                let name = name.Trim()
+                Logging.log <| sprintf "Found assembly for resource: %s" asm.FullName
+                asm.GetManifestResourceStream(name) 
+                |> readStream encoding
+                |> Some
+            | _ -> 
+                None
+        | _ -> 
+            None

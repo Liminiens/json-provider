@@ -196,6 +196,8 @@ module FileTests =
 
     type FileAltCharTestType = JsonProvider<"""files/example.json""">
 
+    type FileAltCharTest1Type = JsonProvider<EmbeddedResource = "JsonProvider.Tests,files.example_embed.json">
+
     [<Test>]
     let ``File resource loads`` () = 
         let data = FileType.GetSample()

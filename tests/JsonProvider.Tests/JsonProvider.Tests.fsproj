@@ -6,6 +6,7 @@
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
   </PropertyGroup>
   <ItemGroup>
+    <EmbeddedResource Include="files\example_embed.json" />
     <Content Include="files\example.json" />
     <None Include="app.config" />
     <Compile Include="JsonProvider.Tests.fs" />
