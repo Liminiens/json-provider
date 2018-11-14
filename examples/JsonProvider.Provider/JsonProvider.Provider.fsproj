@@ -1,21 +1,17 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>netstandard2.0</TargetFramework>
+    <TargetFrameworks>netstandard2.0;net45</TargetFrameworks>
   </PropertyGroup>
 
   <ItemGroup>
+    <Content Include="files\example.json" />
     <Compile Include="Library.fs" />
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="FSharp.Data.JsonProvider" Version="0.2.0" />
     <PackageReference Include="Newtonsoft.Json" Version="12.0.1-beta1" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Reference Include="JsonProvider.Runtime">
-      <HintPath>..\..\src\JsonProvider.Runtime\bin\Debug\netstandard2.0\JsonProvider.Runtime.dll</HintPath>
-    </Reference>
   </ItemGroup>
 
 </Project>
