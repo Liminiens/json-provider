@@ -6,8 +6,8 @@
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
   </PropertyGroup>
   <ItemGroup>
-    <Content Include="files\example.json" />
     <None Include="app.config" />
+    <Content Include="files\example.json" />
     <Compile Include="JsonProvider.Tests.fs" />
     <None Include="paket.references" />
   </ItemGroup>
@@ -19,6 +19,7 @@
       <Project>{7e90d6ce-a10b-4858-a5bc-41df7250cbca}</Project>
       <Private>True</Private>
     </ProjectReference>
+    <ProjectReference Include="..\JsonProvider.Tests.Templates\JsonProvider.Tests.Templates.fsproj" />
   </ItemGroup>
   <Import Project="..\..\.paket\Paket.Restore.targets" />
 </Project>

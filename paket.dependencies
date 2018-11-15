@@ -3,10 +3,9 @@ source https://nuget.org/api/v2
 frameworks: net45, netcoreapp2.0, netstandard2.0
 
 # Add the nuget packages you use here
-nuget FSharp.Core 4.3.4
+nuget FSharp.Data.JsonProvider
 
 nuget NETStandard.Library.NETFramework
-nuget Newtonsoft.Json 11.0.2
 
 # This lines are used by Paket to get the latest version of the Type Provider SDK files
 github fsprojects/FSharp.TypeProviders.SDK src/ProvidedTypes.fsi
@@ -20,3 +19,8 @@ group Test
   nuget NUnit.Console 3.6.1
   nuget NUnit3TestAdapter 3.7.0 version_in_path: true
   nuget FSharp.Core 4.3.4
+
+group Example
+  source https://nuget.org/api/v2
+
+  nuget FSharp.Data.JsonProvider >= 0.2 prerelease

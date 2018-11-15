@@ -9,4 +9,5 @@
     <ProjectReference Include="..\JsonProvider.Provider\JsonProvider.Provider.fsproj" />
   </ItemGroup>
 
+  <Import Project="..\..\.paket\Paket.Restore.targets" />
 </Project>

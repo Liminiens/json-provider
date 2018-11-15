@@ -34,24 +34,37 @@ module internal Sample =
         else
            Json
 
-    let load (encoding: Encoding) (sample: string) (ctx: Context) = 
-        let sample = sample.Trim()
-        let readFile file = 
-            if File.Exists(file) then
-                File.OpenRead(file) |> readStream encoding
-            else
-                invalidArg "sample" <| sprintf """Couldn't find file \"%s\" """ file
-        match (sample, ctx) with
-        | WebResource ->
-            let response = WebRequest.Create(sample).GetResponse()
-            response.GetResponseStream() |> readStream encoding
-        | RelativeFileResource ->
-            let file = ctx.GetRelativeFilePath sample
-            readFile file
-        | FileResource ->
-            readFile sample
-        | Json ->
-            sample    
+    let load (encoding: Encoding) (ctx: Context) (sample: string) (resource: string option) = 
+        let load() = 
+            let sample = sample.Trim()
+            let readFile file = 
+                if File.Exists(file) then
+                    File.OpenRead(file) |> readStream encoding
+                else
+                    invalidArg "sample" <| sprintf """Couldn't find file \"%s\" """ file
+            match (sample, ctx) with
+            | WebResource ->
+                let response = WebRequest.Create(sample).GetResponse()
+                response.GetResponseStream() |> readStream encoding
+            | RelativeFileResource ->
+                let file = ctx.GetRelativeFilePath sample
+                readFile file
+            | FileResource ->
+                readFile sample
+            | Json ->
+                sample
+
+        match resource with
+        | Some(resource) -> 
+            Logging.log <| sprintf "Looking for resource: %s" resource
+            match ctx.ReadResource(resource, encoding) with
+            | Some(sample) ->
+                Logging.log <| sprintf "Returning from resource: %s" sample
+                sample
+            | None ->
+                load()
+        | None ->
+                load()        
             
     let parse (sample: string): JToken =
         let sample = sample.Trim()
@@ -94,12 +107,13 @@ type JsonProvider (config : TypeProviderConfig) as this =
     // check we contain a copy of runtime files, and are not referencing the runtime DLL
     do assert (typeof<``Asm marker``>.Assembly.GetName().Name = execAsm.GetName().Name)         
 
-    let buildStaticParameters (typeName: string) (args: obj[]) =  
-        let context = Context(this, config.ResolutionFolder)
-        
+    let buildStaticParameters (typeName: string) (args: obj[]) =     
+        let context = Context(this, config.ResolutionFolder) 
+
+        let resource = args.[3] :?> string |> Option.ofObj 
         let encoding = Encoding.GetEncoding(args.[2] :?> string)
         let rootTypeName = args.[1] :?> string
-        let sample = Sample.load encoding (args.[0] :?> string) context
+        let sample = Sample.load encoding context (args.[0] :?> string) resource
         let tokenizedSample = Sample.parse sample
 
         let asm = ProvidedAssembly()
@@ -151,15 +165,17 @@ type JsonProvider (config : TypeProviderConfig) as this =
         tpType
 
     let staticParameters =
-        [ ProvidedStaticParameter("Sample", typeof<string>, parameterDefaultValue = ""); 
+        [ ProvidedStaticParameter("Sample", typeof<string>, parameterDefaultValue = String.Empty); 
           ProvidedStaticParameter("RootTypeName", typeof<string>, parameterDefaultValue = TypeInference.defaultRootTypeName); 
-          ProvidedStaticParameter("Encoding", typeof<string>, parameterDefaultValue = "UTF-8");]
+          ProvidedStaticParameter("Encoding", typeof<string>, parameterDefaultValue = "UTF-8"); 
+          ProvidedStaticParameter("EmbeddedResource", typeof<string>, parameterDefaultValue = String.Empty);]
 
     let summaryText = 
         """<summary>A json typed representation</summary>
            <param name='Sample'>Json sample, http url to json resource, relative or absolute path to a file</param>       
            <param name='RootTypeName'>The name to be used for the root type. Defaults to 'Root'.</param>
-           <param name='Encoding'>Sample encoding, default is 'UTF-8'</param>"""
+           <param name='Encoding'>Sample encoding, default is 'UTF-8'</param>
+           <param name='EmbeddedResource'>Embedded resource which will be used as sample. Example: "MyLib, resource.json"</param>"""
 
     let generatedType =
         let providedType = ProvidedTypeDefinition(execAsm, ns, providerTypeName, baseType = Some typeof<obj>, isErased = false)

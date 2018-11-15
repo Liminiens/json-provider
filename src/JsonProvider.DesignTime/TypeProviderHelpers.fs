@@ -8,29 +8,22 @@ open ProviderImplementation.ProvidedTypes.UncheckedQuotations
 open ProviderImplementation.ProvidedTypes
 open System
 open System.IO
+open System.Text
 
 [<AutoOpen>]
 module internal TypeProviderHelpers =
-    open System
-    open System.Text
-    open System.Linq
     open System.Collections.Generic
-    open System.Text.RegularExpressions
-    open System.Globalization
 
-    let prettyName (name: string) = 
-        let name = String(name.SkipWhile(fun c -> not <| Char.IsLetter(c)).ToArray())
-        let toTitleCase (str: string) = 
-            if str.Length > 1 then
-                [|yield Char.ToUpper(str.[0]); yield! str.Skip(1)|]
-                |> String
-            elif str.Length = 1 then
-                Char.ToUpper(str.[0]).ToString()
-            else
-                String.Empty        
-        Regex.Replace(name, "[\s\W_]+", " ").Split(' ')
-        |> Array.map toTitleCase
-        |> fun arr -> String.Join("", arr).Trim()
+    let prettyName (name: string) =
+        let mutable fx = Char.ToUpper
+        String 
+            [| for c in Seq.skipWhile (not << Char.IsLetter) name do
+                    if Char.IsLetter c then 
+                        yield fx c
+                        fx <- id
+                    else 
+                        fx <- Char.ToUpper
+            |]
         
     let getPropertyNameAttribute name =
         { new Reflection.CustomAttributeData() with
@@ -81,7 +74,11 @@ module internal TypeProviderHelpers =
         providedField, providedProperty 
     
     let createArrayType (ty: Type) = ty.MakeArrayType()
-  
+
+[<AutoOpen>]
+module Utility = 
+    open System.Globalization
+
     let readStream (encoding: Encoding) (stream: Stream) =    
         use reader = new StreamReader(stream, encoding)
         reader.ReadToEnd()
@@ -117,3 +114,20 @@ type internal Context(tp: TypeProviderForNamespaces, resolutionFolder: string) =
             | _ ->
                 str.Replace(Path.AltDirectorySeparatorChar, Path.DirectorySeparatorChar)
         Path.GetFullPath(Path.Combine(resolutionFolder, replaceAltChars relativePath))
+    
+    member __.ReadResource(resourceName: string, encoding: Encoding) =
+        match resourceName.Split(',') with
+        | [| asmName; name |] -> 
+            let asmName = asmName.Trim()
+            let bindingContext = tp.TargetContext
+            match bindingContext.TryBindSimpleAssemblyNameToTarget(asmName) with
+            | Choice1Of2 asm -> 
+                let name = name.Trim()
+                Logging.log <| sprintf "Found assembly for resource: %s" asm.FullName
+                asm.GetManifestResourceStream(sprintf "%s.%s" asmName name) 
+                |> readStream encoding
+                |> Some
+            | _ -> 
+                None
+        | _ -> 
+            None
