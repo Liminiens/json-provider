@@ -21,6 +21,8 @@ module internal TypeProviderHelpers =
                     if Char.IsLetter c then 
                         yield fx c
                         fx <- id
+                    elif Char.IsDigit c then
+                        yield c
                     else 
                         fx <- Char.ToUpper
             |]

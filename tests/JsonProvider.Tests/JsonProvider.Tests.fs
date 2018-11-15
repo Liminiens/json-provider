@@ -41,6 +41,7 @@ module ArrayTests =
     let ``Array simple object test`` () =
         let data = ArrayObjectType.GetSample().Data
 
+        Assert.AreEqual("Data", data.[0].GetType().Name)
         Assert.AreEqual(1, data.[0].Test)
         Assert.AreEqual(2, data.[1].Test)
 
@@ -155,13 +156,21 @@ module MiscTests =
         Assert.False(parsed.[1])
         Assert.True(parsed.[2])
     
-    type CaseTestType = JsonProvider<"""{"11__)123 data-test_value space": 10}""">
+    type CaseTestType = JsonProvider<"""{"11__)123 data1-test_1value space": 10}""">
 
     [<Test>]
     let ``Symbols and property case test`` () = 
         let data = CaseTestType.GetSample()
 
-        Assert.AreEqual(10, data.DataTestValueSpace)
+        Assert.AreEqual(10, data.Data1Test1ValueSpace)
+
+    type NumbersInNameTestType = JsonProvider<"""{"100Data1Value100": 10}""">
+
+    [<Test>]
+    let ``Name with numbers parsed correctly`` () = 
+        let data = NumbersInNameTestType.GetSample()
+
+        Assert.AreEqual(10, data.Data1Value100)
 
 module JsonValueTests =
     type BoolType = JsonProvider<"false">
