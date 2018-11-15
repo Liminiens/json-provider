@@ -147,7 +147,7 @@ module MiscTests =
         Assert.False(parsed.[1])
         Assert.True(parsed.[2])
     
-    type CaseTestType = JsonProvider<"""{"11__)123data-test_value space": 10}""">
+    type CaseTestType = JsonProvider<"""{"11__)123 data-test_value space": 10}""">
 
     [<Test>]
     let ``Symbols and property case test`` () = 
@@ -196,8 +196,6 @@ module FileTests =
 
     type FileAltCharTestType = JsonProvider<"""files/example.json""">
 
-    type FileAltCharTest1Type = JsonProvider<EmbeddedResource = "JsonProvider.Tests,files.example_embed.json">
-
     [<Test>]
     let ``File resource loads`` () = 
         let data = FileType.GetSample()
@@ -212,3 +210,5 @@ module FileTests =
         Assert.AreEqual(1, dataAlt.Id)
         Assert.AreEqual("Body", dataAlt.Body)
         Assert.AreEqual("Title", dataAlt.Title)
+
+    //type FileAltCharTest1Type = JsonProvider<EmbeddedResource = "JsonProvider.Tests.Templates, example_embed.json">

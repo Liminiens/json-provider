@@ -12,28 +12,18 @@ open System.Text
 
 [<AutoOpen>]
 module internal TypeProviderHelpers =
-    open System.Linq
     open System.Collections.Generic
-    open System.Text.RegularExpressions
-    open System.Globalization
 
-    let prettyName (name: string) = 
-        let name = 
-            name
-            |> Seq.skipWhile (fun c -> not <| Char.IsLetter(c))
-            |> Array.ofSeq
-            |> String
-        let toTitleCase (str: string) = 
-            if str.Length > 1 then
-                [|yield Char.ToUpper(str.[0]); yield! str.Skip(1)|]
-                |> String
-            elif str.Length = 1 then
-                Char.ToUpper(str.[0]).ToString()
-            else
-                String.Empty        
-        Regex.Replace(name, "[\s\W_]+", " ").Split(' ')
-        |> Array.map toTitleCase
-        |> fun arr -> String.Join(String.Empty, arr).Trim()
+    let prettyName (name: string) =
+        let mutable fx = Char.ToUpper
+        String 
+            [| for c in Seq.skipWhile (not << Char.IsLetter) name do
+                    if Char.IsLetter c then 
+                        yield fx c
+                        fx <- fun c -> c
+                    else 
+                        fx <- Char.ToUpper
+            |]
         
     let getPropertyNameAttribute name =
         { new Reflection.CustomAttributeData() with
@@ -84,7 +74,11 @@ module internal TypeProviderHelpers =
         providedField, providedProperty 
     
     let createArrayType (ty: Type) = ty.MakeArrayType()
-  
+
+[<AutoOpen>]
+module Utility = 
+    open System.Globalization
+
     let readStream (encoding: Encoding) (stream: Stream) =    
         use reader = new StreamReader(stream, encoding)
         reader.ReadToEnd()
