@@ -127,6 +127,17 @@ module internal TypeInference =
                 ObjectType  
             else
                 MixedType
+    
+    let getParentNameOrDefault (jToken: JToken) defaultName =
+        match Option.ofObj jToken.Parent with
+        | Some(parent) ->
+            match (readToken parent) with
+            | Property(jProperty) ->
+                prettyName jProperty.Name
+            | _ ->
+                defaultName
+        | None ->
+            defaultName
 
     let inferType root (tpType: ProvidedTypeDefinition) (settings: TypeInferenceSettings)=
         Logging.log <| sprintf "Start type inference"
@@ -146,17 +157,6 @@ module internal TypeInference =
             tpType.AddMember(genType)
             Logging.log <| sprintf "Generated type full name: %s" genType.FullName
             genType
-
-        let getParentNameOrDefault (jToken: JToken) defaultName =
-            match Option.ofObj jToken.Parent with
-            | Some(parent) ->
-                match readToken parent with
-                | Property(jProperty) ->
-                    prettyName jProperty.Name
-                | _ ->
-                    defaultName
-            | None ->
-                defaultName
 
         let createRootType() =
             let typeName = 
@@ -205,7 +205,7 @@ module internal TypeInference =
 
                 generatedType :> Type
             | Array(jArray) ->                     
-                processArrayToken jArray
+                processArrayToken jArray generatedType
             | Value(value) ->
                 match value with
                 | Boolean(_) ->
@@ -219,7 +219,7 @@ module internal TypeInference =
                 | Float(_) ->
                     typeof<decimal>
 
-        and processArrayToken (jArray: JArray) =           
+        and processArrayToken (jArray: JArray) generatedType =           
             let tokens =
                 jArray 
                 |> Seq.map readToken
@@ -245,7 +245,9 @@ module internal TypeInference =
                     |> Seq.distinctBy (fun prop -> prop.Name)
                     |> List.ofSeq
                     |> JObject
-
-                processToken jObj None |> createArrayType
+                //stub property so we infer type name later
+                let name = getParentNameOrDefault jArray "ProvidedArray"
+                let parent = JProperty(name, jObj)
+                processToken (parent.First) generatedType |> createArrayType
 
         processToken root None

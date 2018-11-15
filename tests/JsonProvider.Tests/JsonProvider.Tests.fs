@@ -88,6 +88,14 @@ module ArrayTests =
         let sample = PlainObjectArrayType.GetSample()
         
         Assert.AreEqual(1, sample.[0].Data)
+        
+    type ArrayInPropertyTestType = JsonProvider<"""[{"Data": 1}]"""> 
+
+    [<Test>]
+    let ``Type name of array in proprty test`` () =
+        let sample = ArrayInPropertyTestType.GetSample()
+        
+        Assert.AreEqual(1, sample.[0].Data)
 
 module ObjectTests = 
     type NullType = JsonProvider<"""{"Data": null}""">
@@ -192,23 +200,47 @@ module HttpTests =
         Assert.IsNotNull(data.Title)
 
 module FileTests = 
-    type FileType = JsonProvider<"""files\example.json""">
-
-    type FileAltCharTestType = JsonProvider<"""files/example.json""">
+    type RelativeFileTestType = JsonProvider<"""files\example.json""">
 
     [<Test>]
     let ``File resource loads`` () = 
-        let data = FileType.GetSample()
-        let dataAlt = FileAltCharTestType.GetSample()
+        let data = RelativeFileTestType.GetSample()
 
         Assert.AreEqual(1, data.UserId)
         Assert.AreEqual(1, data.Id)
         Assert.AreEqual("Body", data.Body)
         Assert.AreEqual("Title", data.Title)
+        
+    type FileAltCharTestType = JsonProvider<"""files/example.json""">
 
-        Assert.AreEqual(1, dataAlt.UserId)
-        Assert.AreEqual(1, dataAlt.Id)
-        Assert.AreEqual("Body", dataAlt.Body)
-        Assert.AreEqual("Title", dataAlt.Title)
+    [<Test>]
+    let ``File with alt char path loads`` () = 
+        let data = FileAltCharTestType.GetSample()
 
-    //type FileAltCharTest1Type = JsonProvider<EmbeddedResource = "JsonProvider.Tests.Templates, example_embed.json">
+        Assert.AreEqual(1, data.UserId)
+        Assert.AreEqual(1, data.Id)
+        Assert.AreEqual("Body", data.Body)
+        Assert.AreEqual("Title", data.Title)
+        
+    type RelativeFileTestBelowType = JsonProvider<"""../JsonProvider.Tests.Templates/example_embed.json""">
+
+    [<Test>]
+    let ``Can use folders below resolution root`` () = 
+        let data = RelativeFileTestBelowType.GetSample()
+
+        Assert.AreEqual(2, data.UserId)
+        Assert.AreEqual(2, data.Id)
+        Assert.AreEqual("Body", data.Body)
+        Assert.AreEqual("Title", data.Title)
+
+module EmbeddedResources = 
+   type EmbedTestType = JsonProvider<EmbeddedResource = "JsonProvider.Tests.Templates, example_embed.json">
+
+   [<Test>]
+    let ``Can read from embeded resource`` () = 
+        let data = EmbedTestType.GetSample()
+
+        Assert.AreEqual(2, data.UserId)
+        Assert.AreEqual(2, data.Id)
+        Assert.AreEqual("Body", data.Body)
+        Assert.AreEqual("Title", data.Title)

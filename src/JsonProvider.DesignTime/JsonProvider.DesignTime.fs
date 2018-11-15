@@ -175,7 +175,7 @@ type JsonProvider (config : TypeProviderConfig) as this =
            <param name='Sample'>Json sample, http url to json resource, relative or absolute path to a file</param>       
            <param name='RootTypeName'>The name to be used for the root type. Defaults to 'Root'.</param>
            <param name='Encoding'>Sample encoding, default is 'UTF-8'</param>
-           <param name='EmbeddedResource'>Resource where to read sample from. Example: "MyLib,resource.json"</param>"""
+           <param name='EmbeddedResource'>Embedded resource which will be used as sample. Example: "MyLib, resource.json"</param>"""
 
     let generatedType =
         let providedType = ProvidedTypeDefinition(execAsm, ns, providerTypeName, baseType = Some typeof<obj>, isErased = false)

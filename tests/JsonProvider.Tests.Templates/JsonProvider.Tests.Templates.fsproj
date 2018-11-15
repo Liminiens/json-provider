@@ -8,4 +8,5 @@
     <EmbeddedResource Include="example_embed.json" />
   </ItemGroup>
 
+  <Import Project="..\..\.paket\Paket.Restore.targets" />
 </Project>

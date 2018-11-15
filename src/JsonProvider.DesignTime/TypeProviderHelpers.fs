@@ -20,7 +20,7 @@ module internal TypeProviderHelpers =
             [| for c in Seq.skipWhile (not << Char.IsLetter) name do
                     if Char.IsLetter c then 
                         yield fx c
-                        fx <- fun c -> c
+                        fx <- id
                     else 
                         fx <- Char.ToUpper
             |]
@@ -124,7 +124,7 @@ type internal Context(tp: TypeProviderForNamespaces, resolutionFolder: string) =
             | Choice1Of2 asm -> 
                 let name = name.Trim()
                 Logging.log <| sprintf "Found assembly for resource: %s" asm.FullName
-                asm.GetManifestResourceStream(name) 
+                asm.GetManifestResourceStream(sprintf "%s.%s" asmName name) 
                 |> readStream encoding
                 |> Some
             | _ -> 
