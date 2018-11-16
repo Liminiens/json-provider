@@ -9,10 +9,5 @@
     <Compile Include="Library.fs" />
   </ItemGroup>
 
-  <ItemGroup>
-    <PackageReference Include="FSharp.Data.JsonProvider" Version="0.2.0" />
-    <PackageReference Include="Newtonsoft.Json" Version="12.0.1-beta1" />
-  </ItemGroup>
-
   <Import Project="..\..\.paket\Paket.Restore.targets" />
 </Project>

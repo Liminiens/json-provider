@@ -15,8 +15,8 @@ namespace JsonProvider.Example
             Console.WriteLine();
 
             var fileSample = JsonFromFile.GetSample();
-            fileSample.Webapp.Servlet
-                .Select(x => x.Servletname)
+            fileSample.WebApp.Servlet
+                .Select(x => x.ServletName)
                 .ToList()
                 .ForEach(Console.WriteLine);
             Console.WriteLine();

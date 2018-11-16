@@ -3,7 +3,8 @@ source https://nuget.org/api/v2
 frameworks: net45, netcoreapp2.0, netstandard2.0
 
 # Add the nuget packages you use here
-nuget FSharp.Data.JsonProvider
+nuget FSharp.Core 4.3.4
+nuget Newtonsoft.Json >= 11
 
 nuget NETStandard.Library.NETFramework
 
@@ -15,12 +16,12 @@ group Test
   source https://nuget.org/api/v2
   frameworks: net461, netcoreapp2.0
 
+  nuget FSharp.Core 4.3.4
   nuget NUnit 3.6.1
   nuget NUnit.Console 3.6.1
   nuget NUnit3TestAdapter 3.7.0 version_in_path: true
-  nuget FSharp.Core 4.3.4
 
 group Example
   source https://nuget.org/api/v2
 
-  nuget FSharp.Data.JsonProvider >= 0.2 prerelease
+  nuget FSharp.Data.JsonProvider >= 0.4 prerelease
