@@ -6,6 +6,24 @@ This is a F# type provider which allows you to generate types from string json s
 
 ![Screenshot](docs/preview.png)
 
+## Usage
+
+You can use it to generate types from json samples (files, web resources, string literals) at design time and then use them in your F#\C# projects.
+
+## Examples
+
+In F#:
+
+    open FSharp.Data.JsonProvider
+
+    type FileType = JsonProvider<"file.txt">
+
+    type RelativeFileType = JsonProvider<"../file.txt">
+
+    type WebType = JsonProvider<"https://jsonplaceholder.typicode.com/todos/1">
+
+    type StringType = JsonProvider<""" { "Data": 1 } """>
+
 ## Status
 
 | OS      | Build & Test |
@@ -16,10 +34,14 @@ This is a F# type provider which allows you to generate types from string json s
 
 Paket is used to acquire the type provider SDK and build the nuget package.
 
-Building:
+Build:
 
     .paket\paket.exe update
 
-    dotnet build -c release
+    dotnet build -c Release
 
-    .paket\paket.exe pack src\JsonProvider.Runtime\paket.template --version 0.0.1
+Pack:
+
+    dotnet test -c Release
+
+    .\.paket\paket.exe pack .\output\ --version <version>
