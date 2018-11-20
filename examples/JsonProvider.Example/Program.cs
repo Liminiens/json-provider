@@ -1,5 +1,6 @@
 ﻿using JsonProvider.Provider;
 using System;
+using System.Linq;
 
 namespace JsonProvider.Example
 {
@@ -7,13 +8,26 @@ namespace JsonProvider.Example
     {
         static void Main(string[] args)
         {
-            var sample = ProviderExampleType.GetSample();
+            var sample = JsonStringType.GetSample();
             Print(sample);
-            var parsed = ProviderExampleType.Parse("{ \"Data\": [{ \"Test\": 1, \"Array\": [2, 3] }] }");
+            var parsed = JsonStringType.Parse("{ \"Data\": [{ \"Test\": 1, \"Array\": [2, 3] }] }");
             Print(parsed);
+            Console.WriteLine();
+
+            var fileSample = JsonFromFile.GetSample();
+            fileSample.WebApp.Servlet
+                .Select(x => x.ServletName)
+                .ToList()
+                .ForEach(Console.WriteLine);
+            Console.WriteLine();
+
+            foreach (var comment in JsonFromWeb.GetSample())
+            {
+                Console.WriteLine($"Name: {comment.Name}; Body: {comment.Body}\n");
+            }
         }
 
-        static void Print(ProviderExampleType.Root data)
+        static void Print(JsonStringType.SuperRoot data)
         {
             foreach (var el in data.Data)
             {

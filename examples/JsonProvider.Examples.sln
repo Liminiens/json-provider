@@ -7,10 +7,6 @@ Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "JsonProvider.Provider", "Js
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "JsonProvider.Example", "JsonProvider.Example\JsonProvider.Example.csproj", "{580A7715-2296-4B35-92DC-0C7F1D36AB8D}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "JsonProvider.NetFrameworkExample", "JsonProvider.NetFrameworkExample\JsonProvider.NetFrameworkExample.csproj", "{DE087BC7-0D04-4058-B241-F14C74213251}"
-EndProject
-Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "JsonProvider.NetFrameworkProvider", "JsonProvider.NetFrameworkProvider\JsonProvider.NetFrameworkProvider.fsproj", "{9737B894-F1A1-4967-8352-0142662FA284}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -25,14 +21,6 @@ Global
 		{580A7715-2296-4B35-92DC-0C7F1D36AB8D}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{580A7715-2296-4B35-92DC-0C7F1D36AB8D}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{580A7715-2296-4B35-92DC-0C7F1D36AB8D}.Release|Any CPU.Build.0 = Release|Any CPU
-		{DE087BC7-0D04-4058-B241-F14C74213251}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{DE087BC7-0D04-4058-B241-F14C74213251}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{DE087BC7-0D04-4058-B241-F14C74213251}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{DE087BC7-0D04-4058-B241-F14C74213251}.Release|Any CPU.Build.0 = Release|Any CPU
-		{9737B894-F1A1-4967-8352-0142662FA284}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{9737B894-F1A1-4967-8352-0142662FA284}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{9737B894-F1A1-4967-8352-0142662FA284}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{9737B894-F1A1-4967-8352-0142662FA284}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -1,9 +1,9 @@
-﻿namespace FSharp.Liminiens.JsonProvider
+﻿namespace FSharp.Data.JsonProvider
 
-module Logging = 
+module internal Logging = 
     open System
     open System.IO
-    open Newtonsoft.Json.Linq
+    open System.Threading
 
     let log =
         #if DEBUG
@@ -13,7 +13,12 @@ module Logging =
             let message =  
                 let time = DateTime.Now.ToString("dd/MM/yyyy HH:mm:ss.fff")
                 sprintf "[%s]: %s" time msg
+
+            use mutex = new Mutex(false, "jsoninference_log.txt")
+            mutex.WaitOne(TimeSpan.FromSeconds(3.0)) |> ignore
             File.AppendAllLines(log, [message])
+            mutex.ReleaseMutex()
+        
         #else
         fun (msg: string) -> ()
         #endif

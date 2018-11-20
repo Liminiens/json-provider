@@ -1,29 +1,31 @@
 ﻿#nowarn "0025"
+#nowarn "0067"
 
-namespace FSharp.Liminiens.JsonProvider
+namespace FSharp.Data.JsonProvider
 
-open System
-open System.Linq
-open System.Collections.Generic
-open System.Text.RegularExpressions
 open Microsoft.FSharp.Quotations
 open ProviderImplementation.ProvidedTypes.UncheckedQuotations
 open ProviderImplementation.ProvidedTypes
+open System
+open System.IO
+open System.Text
 
 [<AutoOpen>]
 module internal TypeProviderHelpers =
-    let prettyName (name: string) =         
-        let trimInvalidChars (str: string) = 
-            Regex.Replace(str, "[\s\W]+", "")
-        let toTitleCase (str: string) = 
-            if str.Length > 1 then
-                [|yield Char.ToUpper(str.[0]); yield! str.Skip(1)|]
-                |> String
-            elif str.Length = 1 then
-                Char.ToUpper(str.[0]).ToString()
-            else
-                String.Empty
-        name |> trimInvalidChars |> toTitleCase
+    open System.Collections.Generic
+
+    let prettyName (name: string) =
+        let mutable fx = Char.ToUpper
+        String 
+            [| for c in Seq.skipWhile (not << Char.IsLetter) name do
+                    if Char.IsLetter c then 
+                        yield fx c
+                        fx <- id
+                    elif Char.IsDigit c then
+                        yield c
+                    else 
+                        fx <- Char.ToUpper
+            |]
         
     let getPropertyNameAttribute name =
         { new Reflection.CustomAttributeData() with
@@ -52,13 +54,13 @@ module internal TypeProviderHelpers =
             if not <| checkName prettyPropName then
                prettyPropName
             else 
-               let rec getUniqueName name count = 
+               let rec getNextProprtyName name count = 
                    let uniqueName = sprintf "%s%i" name count
                    if not <| checkName uniqueName then
                       uniqueName
                    else
-                      getUniqueName name (count + 1)
-               getUniqueName prettyPropName 1
+                      getNextProprtyName name (count + 1)
+               getNextProprtyName prettyPropName 1
                 
         let providedField = ProvidedField("_" + propertyName, typ)
         let providedProperty =
@@ -74,3 +76,60 @@ module internal TypeProviderHelpers =
         providedField, providedProperty 
     
     let createArrayType (ty: Type) = ty.MakeArrayType()
+
+[<AutoOpen>]
+module Utility = 
+    open System.Globalization
+
+    let readStream (encoding: Encoding) (stream: Stream) =    
+        use reader = new StreamReader(stream, encoding)
+        reader.ReadToEnd()
+
+    let tryFirst (parameter: 'T) (actions: list<'T -> 'TResult>) =
+        let rec tryExecute actionsToTry lastErrorMsg =
+            match actionsToTry with
+            | action :: tail ->
+                try
+                    Ok(action parameter)
+                with
+                | :? Exception as e -> 
+                    tryExecute tail e.Message
+            | [] ->
+               Error(lastErrorMsg)
+        tryExecute actions String.Empty
+    
+    let stringToBool (str: string) =
+        let str = str.ToLower(CultureInfo.InvariantCulture).Trim()
+        if str = "false" then Some(false)
+        elif str = "true" then Some(true)
+        else None
+
+type internal Context(tp: TypeProviderForNamespaces, resolutionFolder: string) =
+
+    member __.ResolutionFolder = resolutionFolder
+    
+    member __.GetRelativeFilePath(relativePath: string) =         
+        let replaceAltChars (str: string) =         
+            match Environment.OSVersion.Platform with
+            | PlatformID.Unix | PlatformID.MacOSX ->
+                str.Replace('\\', Path.DirectorySeparatorChar)
+            | _ ->
+                str.Replace(Path.AltDirectorySeparatorChar, Path.DirectorySeparatorChar)
+        Path.GetFullPath(Path.Combine(resolutionFolder, replaceAltChars relativePath))
+    
+    member __.ReadResource(resourceName: string, encoding: Encoding) =
+        match resourceName.Split(',') with
+        | [| asmName; name |] -> 
+            let asmName = asmName.Trim()
+            let bindingContext = tp.TargetContext
+            match bindingContext.TryBindSimpleAssemblyNameToTarget(asmName) with
+            | Choice1Of2 asm -> 
+                let name = name.Trim()
+                Logging.log <| sprintf "Found assembly for resource: %s" asm.FullName
+                asm.GetManifestResourceStream(sprintf "%s.%s" asmName name) 
+                |> readStream encoding
+                |> Some
+            | _ -> 
+                None
+        | _ -> 
+            None

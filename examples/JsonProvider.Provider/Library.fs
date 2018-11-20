@@ -1,9 +1,10 @@
 namespace JsonProvider.Provider
 
-open FSharp.Liminiens.JsonProvider
+open FSharp.Data.JsonProvider
 
-type ProviderExampleType = 
-    JsonProvider<"""{ "Data": [{ "Test": 1, "Array": [1.3, 1] }] }""">
+type JsonStringType = 
+    JsonProvider<"""{ "Data": [{ "Test": 1, "Array": [1.3, 1] }] }""", "SuperRoot">
 
-type ProviderObjectType = 
-    JsonProvider<"""{ "Data": [{ "Test": 1, "Array": [1.3, 1] }] }""">
+type JsonFromFile = JsonProvider<"files/example.json">    
+
+type JsonFromWeb = JsonProvider<"https://jsonplaceholder.typicode.com/comments">

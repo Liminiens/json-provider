@@ -1,12 +1,11 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>netstandard2.0;net45</TargetFrameworks>
+    <TargetFramework>netstandard2.0</TargetFramework>
   </PropertyGroup>
 
   <ItemGroup>
-    <Content Include="files\example.json" />
-    <Compile Include="Library.fs" />
+    <EmbeddedResource Include="example_embed.json" />
   </ItemGroup>
 
   <Import Project="..\..\.paket\Paket.Restore.targets" />
