@@ -45,7 +45,7 @@ Pack:
     dotnet test -c Release
 
     .\.paket\paket.exe pack .\output\ --version <version>
-    
+
     
 [![Built with NUKE](http://nuke.build/squared)](https://nuke.build)
 
