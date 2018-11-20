@@ -5,6 +5,8 @@ frameworks: net45, netcoreapp2.0, netstandard2.0
 # Add the nuget packages you use here
 nuget FSharp.Core 4.3.4
 nuget Newtonsoft.Json >= 11
+nuget GitVersion.CommandLine
+nuget Nuke.Common >= 0.12.0 prerelease 
 
 nuget NETStandard.Library.NETFramework
 
@@ -26,8 +28,8 @@ group Example
 
   nuget FSharp.Data.JsonProvider >= 0.4 prerelease
 
-group Build
-  source https://nuget.org/api/v2
+#group Build
+  #source https://nuget.org/api/v2
 
-  nuget GitVersion.CommandLine
-  nuget Nuke.Common >= 0.12.0 prerelease 
+  #nuget GitVersion.CommandLine
+  #nuget Nuke.Common >= 0.12.0 prerelease 

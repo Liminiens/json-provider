@@ -1,6 +1,7 @@
 using Nuke.Common;
 using Nuke.Common.Git;
 using Nuke.Common.ProjectModel;
+using Nuke.Common.Tooling;
 using Nuke.Common.Tools.DotNet;
 using Nuke.Common.Tools.GitVersion;
 using Nuke.Common.Tools.Paket;
@@ -62,12 +63,11 @@ class Build : NukeBuild
         .DependsOn(Compile)
         .Executes(() =>
         {
-            DotNetPack(s => s
-                .SetProject(Solution)
-                .EnableNoBuild()
-                .SetConfiguration(Configuration)
-                .EnableIncludeSymbols()
+            PaketTasks.PaketPack(s => s
+                .SetToolPath(SourceDirectory / ".paket" / "paket.exe")
+                .SetBuildConfiguration(Configuration)
+                .EnableSymbols()
                 .SetOutputDirectory(OutputDirectory)
-                .SetVersion(GitVersion.NuGetVersionV2));
+                .SetPackageVersion(GitVersion.NuGetVersionV2));
         });
 }
