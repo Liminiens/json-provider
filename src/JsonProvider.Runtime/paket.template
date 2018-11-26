@@ -19,6 +19,8 @@ summary
     Json generative type provider for F# and .NET.
 description
     Json generative type provider for F# and .NET.
+releaseNotes
+    Added Nullable<'T> support    
 tags
     F# fsharp typeproviders JsonProvider json json.net
 files

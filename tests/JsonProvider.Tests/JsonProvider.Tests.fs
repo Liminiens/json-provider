@@ -243,9 +243,9 @@ module FileTests =
         Assert.AreEqual("Title", data.Title)
 
 module EmbeddedResources = 
-   type EmbedTestType = JsonProvider<EmbeddedResource = "JsonProvider.Tests.Templates, example_embed.json">
+    type EmbedTestType = JsonProvider<EmbeddedResource = "JsonProvider.Tests.Templates, example_embed.json">
 
-   [<Test>]
+    [<Test>]
     let ``Can read from embeded resource`` () = 
         let data = EmbedTestType.GetSample()
 
@@ -253,3 +253,21 @@ module EmbeddedResources =
         Assert.AreEqual(2, data.Id)
         Assert.AreEqual("Body", data.Body)
         Assert.AreEqual("Title", data.Title)
+
+module NullableValueTypes = 
+   open System
+
+   type NullableType = JsonProvider<""" { "Value": 123, "Array": [5], "Obj": { Value: 11.5 }, "ArrayWithNulls": [null, 2] } """, NullableValueTypes = true>
+
+   [<Test>]
+    let ``Nullable of T tests`` () = 
+        let data = NullableType.GetSample()
+        
+        let getValue (value: Nullable<'T>) = value.Value
+        
+        Assert.AreEqual(123, getValue data.Value)
+        Assert.AreEqual(11.5, getValue data.Obj.Value)
+        Assert.AreEqual(5, getValue data.Array.[0])
+        Assert.AreEqual(5, getValue data.Array.[0])
+        Assert.IsNull(data.ArrayWithNulls.[0])
+        Assert.AreEqual(2, getValue data.ArrayWithNulls.[1])
