@@ -1,6 +1,7 @@
 module JsonProviderImplementation
 #nowarn "0025"
-
+open FSharp.Data.JsonProvider
+open System
 open System.Linq
 open System.IO
 open System.Text
@@ -37,15 +38,21 @@ module internal Sample =
     let load (encoding: Encoding) (ctx: Context) (sample: string) (resource: string option) = 
         let load() = 
             let sample = sample.Trim()
+
             let readFile file = 
                 if File.Exists(file) then
                     File.OpenRead(file) |> readStream encoding
                 else
                     invalidArg "sample" <| sprintf """Couldn't find file \"%s\" """ file
+
+            let download (source: string) = 
+                let response = WebRequest.Create(source).GetResponse()
+                response.GetResponseStream() |> readStream encoding
+
             match (sample, ctx) with
             | WebResource ->
-                let response = WebRequest.Create(sample).GetResponse()
-                response.GetResponseStream() |> readStream encoding
+                let res = (fun () -> download sample :> obj, TimeSpan.FromMinutes(5.0))
+                res |> Cache.Add
             | RelativeFileResource ->
                 let file = ctx.GetRelativeFilePath sample
                 readFile file
