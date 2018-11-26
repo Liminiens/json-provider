@@ -1,6 +1,6 @@
 ﻿namespace FSharp.Data.JsonProvider
 
-type internal TypeInferenceSettings = { RootTypeName: string }
+type internal TypeInferenceSettings = { RootTypeName: string; NullableTypes: bool }
 
 module internal TypeInference =
     open System
@@ -142,6 +142,12 @@ module internal TypeInference =
     let inferType root (tpType: ProvidedTypeDefinition) (settings: TypeInferenceSettings)=
         Logging.log <| sprintf "Start type inference"
 
+        let inline preprocessType typ =
+            if settings.NullableTypes then
+                createNullableType typ
+            else
+                typ
+
         let getUniqueTypeName =
             let store = new Dictionary<string, int ref>()
             fun name ->
@@ -209,17 +215,17 @@ module internal TypeInference =
             | Value(value) ->
                 match value with
                 | Boolean(_) ->
-                    typeof<bool>
+                    typeof<bool> |> preprocessType
                 | Int(_) ->
-                    typeof<int32>
+                    typeof<int32> |> preprocessType
                 | Long(_) ->
-                    typeof<int64>
+                    typeof<int64> |> preprocessType
                 | String(_) ->
                     typeof<string>
                 | Float(_) ->
-                    typeof<decimal>
+                    typeof<decimal> |> preprocessType
 
-        and processArrayToken (jArray: JArray) generatedType =           
+        and processArrayToken (jArray: JArray) generatedType =                     
             let tokens =
                 jArray 
                 |> Seq.map readToken
@@ -227,15 +233,15 @@ module internal TypeInference =
             
             match tokens with
             | DecimalType ->
-                createArrayType typeof<decimal>
+                typeof<decimal> |> preprocessType |> createArrayType 
             | LongType ->
-                createArrayType typeof<int64>
+                typeof<int64> |> preprocessType |> createArrayType
             | IntType ->
-                createArrayType typeof<int32>
+                typeof<int32> |> preprocessType |> createArrayType
             | BooleanType ->      
-                createArrayType typeof<bool>
+                typeof<bool> |> preprocessType |> createArrayType
             | StringType ->
-                createArrayType typeof<string>
+                typeof<string> 
             | MixedType ->
                 typeof<JArray>               
             | ObjectType ->
@@ -245,6 +251,7 @@ module internal TypeInference =
                     |> Seq.distinctBy (fun prop -> prop.Name)
                     |> List.ofSeq
                     |> JObject
+
                 //stub property so we infer type name later
                 let name = getParentNameOrDefault jArray "ProvidedArray"
                 let parent = JProperty(name, jObj)

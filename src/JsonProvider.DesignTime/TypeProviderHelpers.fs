@@ -77,6 +77,12 @@ module internal TypeProviderHelpers =
     
     let createArrayType (ty: Type) = ty.MakeArrayType()
 
+    let createNullableType (ty: Type) =
+        if ty.IsValueType then
+            typedefof<Nullable<_>>.MakeGenericType(ty)
+        else
+            ty
+
 [<AutoOpen>]
 module Utility = 
     open System.Globalization
