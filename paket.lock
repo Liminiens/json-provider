@@ -6,12 +6,12 @@ NUGET
     Newtonsoft.Json (11.0.2)
 GITHUB
   remote: fsprojects/FSharp.TypeProviders.SDK
-    src/ProvidedTypes.fs (4c8d754453da9761a62e360b739e36bacc2a38f8)
-    src/ProvidedTypes.fsi (4c8d754453da9761a62e360b739e36bacc2a38f8)
+    src/ProvidedTypes.fs (3a934e274650f1116cf7872226e7eac1bf775a6d)
+    src/ProvidedTypes.fsi (3a934e274650f1116cf7872226e7eac1bf775a6d)
 GROUP Example
 NUGET
   remote: https://www.nuget.org/api/v2
-    FSharp.Core (4.5.2)
+    FSharp.Core (4.5.3)
       System.Collections (>= 4.0.11) - restriction: && (< net45) (>= netstandard1.6) (< netstandard2.0)
       System.Console (>= 4.0) - restriction: && (< net45) (>= netstandard1.6) (< netstandard2.0)
       System.Diagnostics.Debug (>= 4.0.11) - restriction: && (< net45) (>= netstandard1.6) (< netstandard2.0)
@@ -35,7 +35,7 @@ NUGET
       System.Threading.Thread (>= 4.0) - restriction: && (< net45) (>= netstandard1.6) (< netstandard2.0)
       System.Threading.ThreadPool (>= 4.0.10) - restriction: && (< net45) (>= netstandard1.6) (< netstandard2.0)
       System.Threading.Timer (>= 4.0.1) - restriction: && (< net45) (>= netstandard1.6) (< netstandard2.0)
-    FSharp.Data.JsonProvider (0.4.1)
+    FSharp.Data.JsonProvider (0.5)
       FSharp.Core (>= 4.3.4)
       Newtonsoft.Json (>= 11.0.2)
     Microsoft.CSharp (4.5) - restriction: || (&& (< net20) (>= netstandard1.0) (< netstandard1.3)) (&& (< net20) (>= netstandard1.3) (< netstandard2.0))
@@ -676,7 +676,7 @@ RESTRICTION: || (== net461) (== netcoreapp2.0)
 NUGET
   remote: https://www.nuget.org/api/v2
     FSharp.Core (4.3.4)
-    Microsoft.NETCore.Platforms (2.1.1) - restriction: || (&& (== net461) (< net45) (>= netstandard2.0)) (&& (== net461) (>= netcoreapp2.0)) (&& (== net461) (>= netstandard1.6)) (== netcoreapp2.0)
+    Microsoft.NETCore.Platforms (2.1.2) - restriction: || (&& (== net461) (< net45) (>= netstandard2.0)) (&& (== net461) (>= netcoreapp2.0)) (&& (== net461) (>= netstandard1.6)) (== netcoreapp2.0)
     Microsoft.NETCore.Targets (2.1) - restriction: || (&& (== net461) (< net45) (>= netstandard1.6)) (&& (== net461) (>= netstandard1.6) (< portable-net45+win8+wp8+wpa81)) (== netcoreapp2.0)
     NETStandard.Library (2.0.3) - restriction: || (&& (== net461) (>= netstandard1.6)) (== netcoreapp2.0)
       Microsoft.NETCore.Platforms (>= 1.1)
