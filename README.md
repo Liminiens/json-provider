@@ -1,4 +1,4 @@
-[![NuGet](https://img.shields.io/nuget/v/Resx.svg)](https://www.nuget.org/packages/Resx/)
+[![NuGet](https://img.shields.io/nuget/v/FSharp.Data.JsonProvider.svg)](https://www.nuget.org/packages/FSharp.Data.JsonProvider)
 
 # Json generative type provider
 
