@@ -1,8 +1,10 @@
+using System;
 using Nuke.Common;
 using Nuke.Common.Git;
 using Nuke.Common.ProjectModel;
 using Nuke.Common.Tooling;
 using Nuke.Common.Tools.DotNet;
+using Nuke.Common.Tools.Git;
 using Nuke.Common.Tools.GitVersion;
 using Nuke.Common.Tools.Paket;
 using static Nuke.Common.IO.FileSystemTasks;
@@ -12,6 +14,11 @@ using static Nuke.Common.Tools.DotNet.DotNetTasks;
 class Build : NukeBuild
 {
     public static int Main() => Execute<Build>(x => x.Compile);
+    static Build()
+    {
+        var path = RootDirectory / "packages" / "nukebuild" / "GitVersion.CommandLine.DotNetCore" / "tools" / "GitVersion.dll";
+        Environment.SetEnvironmentVariable("GITVERSION_EXE", path);
+    }
 
     [Parameter("Configuration to build - Default is 'Debug' (local) or 'Release' (server)")]
     readonly string Configuration = IsLocalBuild ? "Debug" : "Release";

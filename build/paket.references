@@ -1,2 +1,3 @@
+group NukeBuild
 Nuke.Common
-GitVersion.CommandLine
+GitVersion.CommandLine.DotNetCore
