@@ -77,6 +77,12 @@ module internal TypeProviderHelpers =
     
     let createArrayType (ty: Type) = ty.MakeArrayType()
 
+    let createNullableType (ty: Type) =
+        if ty.IsValueType then
+            typedefof<Nullable<_>>.MakeGenericType(ty)
+        else
+            ty
+
 [<AutoOpen>]
 module Utility = 
     open System.Globalization
@@ -98,11 +104,17 @@ module Utility =
                Error(lastErrorMsg)
         tryExecute actions String.Empty
     
-    let stringToBool (str: string) =
+    type BoolParseResult =
+        | BoolValue of bool
+        | NotBoolValue
+        | NullValue
+
+    let stringToBool (str: string) = 
         let str = str.ToLower(CultureInfo.InvariantCulture).Trim()
-        if str = "false" then Some(false)
-        elif str = "true" then Some(true)
-        else None
+        if String.IsNullOrWhiteSpace(str) then NullValue
+        elif str = "false" then BoolValue(false)
+        elif str = "true" then BoolValue(true)
+        else NotBoolValue
 
 type internal Context(tp: TypeProviderForNamespaces, resolutionFolder: string) =
 

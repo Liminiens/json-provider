@@ -11,8 +11,8 @@ nuget Nuke.Common >= 0.12.0 prerelease
 nuget NETStandard.Library.NETFramework
 
 # This lines are used by Paket to get the latest version of the Type Provider SDK files
-github fsprojects/FSharp.TypeProviders.SDK src/ProvidedTypes.fsi
-github fsprojects/FSharp.TypeProviders.SDK src/ProvidedTypes.fs
+github fsprojects/FSharp.TypeProviders.SDK:4c8d754453da9761a62e360b739e36bacc2a38f8 src/ProvidedTypes.fsi
+github fsprojects/FSharp.TypeProviders.SDK:4c8d754453da9761a62e360b739e36bacc2a38f8 src/ProvidedTypes.fs
 
 group Test
   source https://nuget.org/api/v2

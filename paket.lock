@@ -531,7 +531,7 @@ GITHUB
 GROUP Example
 NUGET
   remote: https://www.nuget.org/api/v2
-    FSharp.Core (4.5.3)
+    FSharp.Core (4.5.4)
       System.Collections (>= 4.0.11) - restriction: && (< net45) (>= netstandard1.6) (< netstandard2.0)
       System.Console (>= 4.0) - restriction: && (< net45) (>= netstandard1.6) (< netstandard2.0)
       System.Diagnostics.Debug (>= 4.0.11) - restriction: && (< net45) (>= netstandard1.6) (< netstandard2.0)
@@ -555,7 +555,7 @@ NUGET
       System.Threading.Thread (>= 4.0) - restriction: && (< net45) (>= netstandard1.6) (< netstandard2.0)
       System.Threading.ThreadPool (>= 4.0.10) - restriction: && (< net45) (>= netstandard1.6) (< netstandard2.0)
       System.Threading.Timer (>= 4.0.1) - restriction: && (< net45) (>= netstandard1.6) (< netstandard2.0)
-    FSharp.Data.JsonProvider (0.4.1)
+    FSharp.Data.JsonProvider (0.5)
       FSharp.Core (>= 4.3.4)
       Newtonsoft.Json (>= 11.0.2)
     Microsoft.CSharp (4.5) - restriction: || (&& (< net20) (>= netstandard1.0) (< netstandard1.3)) (&& (< net20) (>= netstandard1.3) (< netstandard2.0))

@@ -1,6 +1,6 @@
 ﻿namespace FSharp.Data.JsonProvider
 
-type internal TypeInferenceSettings = { RootTypeName: string }
+type internal TypeInferenceSettings = { RootTypeName: string; NullableTypes: bool }
 
 module internal TypeInference =
     open System
@@ -17,6 +17,7 @@ module internal TypeInference =
         | Int of int
         | Boolean of bool
         | Long of int64
+        | Null
 
     type JsonTokenType =
         | Object of JObject
@@ -50,16 +51,19 @@ module internal TypeInference =
                 Value(Boolean(jToken.Value<bool>()))
             | JTokenType.Undefined
             | JTokenType.Null ->
-                Value(String(String.Empty))
+                Value(Null)
             | _ ->
                 let strValue = jToken.Value<string>()
                 match stringToBool strValue with
-                | Some(value) ->
+                | BoolValue(value) ->
                     Value(Boolean(value))
-                | None ->
+                | NotBoolValue ->
                     Value(String(strValue))
+                | NullValue ->
+                    Value(Null)
 
     let (|IntType|LongType|DecimalType|BooleanType|StringType|ObjectType|MixedType|) (tokens: JsonTokenType list) = 
+        let tokens = tokens |> List.filter (function Value(Null) -> false | _ -> true)
 
         let checkType predicate = 
             tokens |> List.forall predicate
@@ -105,28 +109,31 @@ module internal TypeInference =
                 false
 
         let isObject = (function (Object(_)) -> true | _ -> false)
-
-        match checkType isPrimitive with
-        | true ->
-            if checkType isFloat then
-                DecimalType
-            elif checkType isLong then
-                LongType
-            elif checkType isInt then
-                IntType
-            elif checkType isInt32OrInt64 then
-                LongType
-            elif checkType isFloatOrInt then
-                DecimalType
-            elif checkType isBoolean then
-                BooleanType
-            else
-                StringType
-        | false ->   
-            if checkType isObject then
-                ObjectType  
-            else
-                MixedType
+        
+        if tokens.Length = 0 then
+            StringType
+        else
+            match checkType isPrimitive with
+            | true ->
+                if checkType isFloat then
+                    DecimalType
+                elif checkType isLong then
+                    LongType
+                elif checkType isInt then
+                    IntType
+                elif checkType isInt32OrInt64 then
+                    LongType
+                elif checkType isFloatOrInt then
+                    DecimalType
+                elif checkType isBoolean then
+                    BooleanType
+                else
+                    StringType
+            | false ->   
+                if checkType isObject then
+                    ObjectType  
+                else
+                    MixedType
     
     let getParentNameOrDefault (jToken: JToken) defaultName =
         match Option.ofObj jToken.Parent with
@@ -141,6 +148,12 @@ module internal TypeInference =
 
     let inferType root (tpType: ProvidedTypeDefinition) (settings: TypeInferenceSettings)=
         Logging.log <| sprintf "Start type inference"
+
+        let inline preprocessType typ =
+            if settings.NullableTypes then
+                createNullableType typ
+            else
+                typ
 
         let getUniqueTypeName =
             let store = new Dictionary<string, int ref>()
@@ -209,17 +222,17 @@ module internal TypeInference =
             | Value(value) ->
                 match value with
                 | Boolean(_) ->
-                    typeof<bool>
+                    typeof<bool> |> preprocessType
                 | Int(_) ->
-                    typeof<int32>
+                    typeof<int32> |> preprocessType
                 | Long(_) ->
-                    typeof<int64>
-                | String(_) ->
-                    typeof<string>
+                    typeof<int64> |> preprocessType
                 | Float(_) ->
-                    typeof<decimal>
+                    typeof<decimal> |> preprocessType
+                | String(_) | Null ->
+                    typeof<string>
 
-        and processArrayToken (jArray: JArray) generatedType =           
+        and processArrayToken (jArray: JArray) generatedType =                     
             let tokens =
                 jArray 
                 |> Seq.map readToken
@@ -227,15 +240,15 @@ module internal TypeInference =
             
             match tokens with
             | DecimalType ->
-                createArrayType typeof<decimal>
+                typeof<decimal> |> preprocessType |> createArrayType 
             | LongType ->
-                createArrayType typeof<int64>
+                typeof<int64> |> preprocessType |> createArrayType
             | IntType ->
-                createArrayType typeof<int32>
+                typeof<int32> |> preprocessType |> createArrayType
             | BooleanType ->      
-                createArrayType typeof<bool>
+                typeof<bool> |> preprocessType |> createArrayType
             | StringType ->
-                createArrayType typeof<string>
+                typeof<string> |> createArrayType
             | MixedType ->
                 typeof<JArray>               
             | ObjectType ->
@@ -245,6 +258,7 @@ module internal TypeInference =
                     |> Seq.distinctBy (fun prop -> prop.Name)
                     |> List.ofSeq
                     |> JObject
+
                 //stub property so we infer type name later
                 let name = getParentNameOrDefault jArray "ProvidedArray"
                 let parent = JProperty(name, jObj)
