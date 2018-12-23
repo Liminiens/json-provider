@@ -36,15 +36,11 @@ Paket is used to acquire the type provider SDK and build the nuget package.
 
 Build:
 
-    .paket\paket.exe update
-
-    dotnet build -c Release
+    .\build.ps1 --target Build -Configuration Release
 
 Pack:
 
-    dotnet test -c Release
-
-    .\.paket\paket.exe pack .\output\ --version <version>
+    .\build.ps1 --target Pack -Configuration Release
 
     
 [![Built with NUKE](http://nuke.build/squared)](https://nuke.build)
