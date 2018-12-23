@@ -19,17 +19,17 @@ jobs:
   - template: pipelines.non-windows.template.yml'
 
 - job:
-  displayName: vs2017_win2016
-  pool:
-    vmImage: 'vs2017-win2016'
-
-  steps:
-  - template: pipelines.windows.template.yml 
-
-- job:
   displayName: macOS_10_13
   pool:
     vmImage: 'macOS-10.13'
 
   steps:
   - template: pipelines.non-windows.template.yml 
+  
+- job:
+  displayName: vs2017_win2016
+  pool:
+    vmImage: 'vs2017-win2016'
+
+  steps:
+  - template: pipelines.windows.template.yml 
