@@ -16,7 +16,7 @@ jobs:
     vmImage: 'Ubuntu 16.04'
 
   steps:
-  - template: pipelines.non-windows.template.yml'
+  - template: pipelines.non-windows.template.yml
  
   - script: bash build.sh --target Test --Configuration $(buildConfiguration)
     displayName: 'build.sh --target Test --Configuration $(buildConfiguration)'
