@@ -1,6 +1,6 @@
  steps:
   - script: .paket\paket.bootstrapper.exe
     displayName: 'Download paket'
-    
-  - script: .\.paket\paket.exe restore  
-    displayName: 'Paket restore'  
+
+  - script: .\build.ps1 --target Test --Configuration $(buildConfiguration)
+    displayName: 'build.ps1 --target Test --Configuration $(buildConfiguration)'
