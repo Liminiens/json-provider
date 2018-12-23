@@ -1,6 +1,3 @@
  steps:
   - script: mono .paket/paket.bootstrapper.exe
     displayName: 'Download paket'
-    
-  - script: mono ./.paket/paket.exe restore  
-    displayName: 'Paket restore'  
