@@ -18,11 +18,8 @@ jobs:
   steps:
   - template: pipelines.non-windows.template.yml
     
-  - script: dotnet build --configuration $(buildConfiguration)
-    displayName: 'dotnet build $(buildConfiguration)'
-
-  - script: dotnet test --configuration $(buildConfiguration)
-    displayName: 'dotnet test $(buildConfiguration)'
+  - script: build.sh --target Test --Configuration $(buildConfiguration)
+    displayName: 'build.sh --target Test --Configuration $(buildConfiguration)'
 
 - job:
   displayName: vs2017_win2016
@@ -32,11 +29,8 @@ jobs:
   steps:
   - template: pipelines.windows.template.yml 
     
-  - script: dotnet build --configuration $(buildConfiguration)
-    displayName: 'dotnet build $(buildConfiguration)'
-
-  - script: dotnet test --configuration $(buildConfiguration)
-    displayName: 'dotnet test $(buildConfiguration)'
+  - script: build.ps1 --target Test --Configuration $(buildConfiguration)
+    displayName: 'build.ps1 --target Test --Configuration $(buildConfiguration)'
 
 - job:
   displayName: macOS_10_13
@@ -46,8 +40,5 @@ jobs:
   steps:
   - template: pipelines.non-windows.template.yml 
     
-  - script: dotnet build --configuration $(buildConfiguration)
-    displayName: 'dotnet build $(buildConfiguration)'
-
-  - script: dotnet test --configuration $(buildConfiguration)
-    displayName: 'dotnet test $(buildConfiguration)'
+  - script: build.sh --target Test --Configuration $(buildConfiguration)
+    displayName: 'build.sh --target Test --Configuration $(buildConfiguration)'

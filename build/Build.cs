@@ -16,8 +16,8 @@ class Build : NukeBuild
     public static int Main() => Execute<Build>(x => x.Compile);
     static Build()
     {
-        var path = RootDirectory / "packages" / "nukebuild" / "GitVersion.CommandLine.DotNetCore" / "tools" / "GitVersion.dll";
-        Environment.SetEnvironmentVariable("GITVERSION_EXE", path);
+        Environment.SetEnvironmentVariable("GITVERSION_EXE", RootDirectory / "packages" / "nukebuild" / "GitVersion.CommandLine.DotNetCore" / "tools" / "GitVersion.dll");
+        Environment.SetEnvironmentVariable("PAKET_EXE", RootDirectory / ".paket" / "paket.exe");
     }
 
     [Parameter("Configuration to build - Default is 'Debug' (local) or 'Release' (server)")]
@@ -63,7 +63,10 @@ class Build : NukeBuild
         .DependsOn(Compile)
         .Executes(() =>
         {
-            DotNetTest(s => s.SetResultsDirectory(OutputDirectory / "tests"));
+            DotNetTest(s => s
+                .SetConfiguration(Configuration)
+                .EnableNoBuild()
+                .SetResultsDirectory(OutputDirectory / "tests"));
         });
 
     Target Pack => _ => _
@@ -71,7 +74,7 @@ class Build : NukeBuild
         .Executes(() =>
         {
             PaketTasks.PaketPack(s => s
-                .SetToolPath(SourceDirectory / ".paket" / "paket.exe")
+                .SetTemplateFile(RootDirectory / "src" / "JsonProvider.Runtime" / "paket.template")
                 .SetBuildConfiguration(Configuration)
                 .EnableSymbols()
                 .SetOutputDirectory(OutputDirectory)
