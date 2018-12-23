@@ -36,11 +36,11 @@ Paket is used to acquire the type provider SDK and build the nuget package.
 
 Build:
 
-    .\build.ps1 --target Build -Configuration Release
+    .\build.ps1 --target Build --Configuration Release
 
 Pack:
 
-    .\build.ps1 --target Pack -Configuration Release
+    .\build.ps1 --target Pack --Configuration Release
 
     
 [![Built with NUKE](http://nuke.build/squared)](https://nuke.build)
