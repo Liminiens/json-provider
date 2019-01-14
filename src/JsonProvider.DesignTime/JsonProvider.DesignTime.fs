@@ -18,7 +18,7 @@ module internal Sample =
     open TypeInference
 
     type ResourceType =
-        | File of path: string
+        | PhysicalFile of path: string
         | Other
 
     let (|RelativeFileResource|FileResource|WebResource|Json|) (sample: string, ctx: Context) =     
@@ -58,9 +58,9 @@ module internal Sample =
                 (Other, download sample)
             | RelativeFileResource ->
                 let file = ctx.GetRelativeFilePath sample
-                (File file, readFile file)
+                (PhysicalFile file, readFile file)
             | FileResource ->
-                (File sample, readFile sample)
+                (PhysicalFile sample, readFile sample)
             | Json ->
                 (Other, sample)
         resource
@@ -98,7 +98,8 @@ module internal Sample =
             <@@ value @@>
         | _ ->
             <@@ Json.deserialize sample sampleType @@>
-            
+
+open Sample
             
 [<TypeProvider>]
 type JsonProvider (config : TypeProviderConfig) as this =
@@ -119,7 +120,7 @@ type JsonProvider (config : TypeProviderConfig) as this =
         let resource = args.[3] :?> string |> Option.ofObj 
         let encoding = Encoding.GetEncoding(args.[2] :?> string)
         let rootTypeName = args.[1] :?> string
-        let sample = Sample.load encoding context (args.[0] :?> string) resource
+        let resourceType, sample = Sample.load encoding context (args.[0] :?> string) resource
         let tokenizedSample = Sample.parse sample
 
         let asm = ProvidedAssembly()
@@ -128,7 +129,12 @@ type JsonProvider (config : TypeProviderConfig) as this =
 
         let settings = { RootTypeName = rootTypeName; NullableTypes = args.[4] :?> bool }
         let sampleType = TypeInference.inferType tokenizedSample.Root tpType settings
-        
+                
+        match resourceType with
+        | PhysicalFile(path) -> 
+            this.SetFileToWatch(sampleType.ToString(), path)
+        | Other -> ()
+
         let sampleMethod =
             ProvidedMethod(
                 methodName = "GetSampleJson",
