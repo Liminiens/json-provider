@@ -145,6 +145,7 @@ type internal Context(tp: TypeProviderForNamespaces, resolutionFolder: string) =
         | _ -> 
             None
 
+//todo: https://github.com/fsharp/FSharp.Data/blob/85ce4eb5460de0bbec568f1a6bdc6b3a91360848/src/CommonProviderImplementation/Helpers.fs
 type DisposableTypeProviderForNamespaces(config, ?assemblyReplacementMap) as x =
     inherit TypeProviderForNamespaces(config, ?assemblyReplacementMap=assemblyReplacementMap, addDefaultProbingLocation=true)
    
@@ -171,6 +172,7 @@ type DisposableTypeProviderForNamespaces(config, ?assemblyReplacementMap) as x =
  
     member __.SetFileToWatch(fullTypeName, path) =
         lock filesToWatch <| fun () -> 
+            Logging.log <| sprintf "Added file to cache, file: %s; type: %s" fullTypeName path
             filesToWatch.[fullTypeName] <- path
  
     member __.GetFileToWath(fullTypeName) =

@@ -18,10 +18,10 @@ module internal Sample =
     open TypeInference
 
     type ResourceType =
-        | PhysicalFile of path: string
-        | Other
+        | FileResource of path: string
+        | OtherResource
 
-    let (|RelativeFileResource|FileResource|WebResource|Json|) (sample: string, ctx: Context) =     
+    let (|IsRelativeFileResource|IsFileResource|IsWebResource|IsJson|) (sample: string, ctx: Context) =     
         let invalidPathChars = Path.GetInvalidPathChars()
         let isValidPath =
             sample 
@@ -29,15 +29,15 @@ module internal Sample =
             |> Option.isNone
 
         if sample.StartsWith("http") then
-           WebResource
+           IsWebResource
         elif sample.StartsWith("{") || sample.StartsWith("[") then
-           Json
+           IsJson
         elif isValidPath && File.Exists(ctx.GetRelativeFilePath sample) then
-           RelativeFileResource
+           IsRelativeFileResource
         elif isValidPath && File.Exists(sample) then
-           FileResource
+           IsFileResource
         else
-           Json
+           IsJson
 
     let load (encoding: Encoding) (ctx: Context) (sample: string) (resource: string option) = 
         let load() = 
@@ -54,22 +54,22 @@ module internal Sample =
                 response.GetResponseStream() |> readStream encoding
 
             match (sample, ctx) with
-            | WebResource ->
-                (Other, download sample)
-            | RelativeFileResource ->
+            | IsWebResource ->
+                (OtherResource, download sample)
+            | IsRelativeFileResource ->
                 let file = ctx.GetRelativeFilePath sample
-                (PhysicalFile file, readFile file)
-            | FileResource ->
-                (PhysicalFile sample, readFile sample)
-            | Json ->
-                (Other, sample)
+                (FileResource file, readFile file)
+            | IsFileResource ->
+                (FileResource sample, readFile sample)
+            | IsJson ->
+                (OtherResource, sample)
         resource
         |> Option.bind (fun resource -> 
             Logging.log <| sprintf "Looking for resource: %s" resource
             ctx.ReadResource(resource, encoding))
         |> Option.map (fun sample -> 
             Logging.log <| sprintf "Returning from resource: %s" sample
-            (Other, sample))
+            (OtherResource, sample))
         |> Option.defaultValue (load())      
             
     let parse (sample: string): JToken =
@@ -129,11 +129,12 @@ type JsonProvider (config : TypeProviderConfig) as this =
 
         let settings = { RootTypeName = rootTypeName; NullableTypes = args.[4] :?> bool }
         let sampleType = TypeInference.inferType tokenizedSample.Root tpType settings
-                
-        match resourceType with
-        | PhysicalFile(path) -> 
-            this.SetFileToWatch(sampleType.ToString(), path)
-        | Other -> ()
+        
+        if config.IsInvalidationSupported then
+            match resourceType with
+            | FileResource(path) -> 
+                this.SetFileToWatch(sampleType.ToString(), path)
+            | OtherResource -> ()
 
         let sampleMethod =
             ProvidedMethod(
