@@ -8,9 +8,9 @@ namespace JsonProvider.Example
     {
         static void Main(string[] args)
         {
-            var sample = JsonStringType.GetSample();
+            var sample = JsonType.GetSample();
             Print(sample);
-            var parsed = JsonStringType.Parse("{ \"Data\": [{ \"Test\": 1, \"Array\": [2, 3] }] }");
+            var parsed = JsonType.Parse("{ \"Data\": [{ \"Test\": 1, \"Array\": [2, 3] }] }");
             Print(parsed);
             Console.WriteLine();
 
@@ -25,9 +25,14 @@ namespace JsonProvider.Example
             {
                 Console.WriteLine($"Name: {comment.Name}; Body: {comment.Body}\n");
             }
+
+            foreach (var item in JsonNullableType.GetSample().Data)
+            {
+                Console.WriteLine(item);
+            }
         }
 
-        static void Print(JsonStringType.SuperRoot data)
+        static void Print(JsonType.SuperRoot data)
         {
             foreach (var el in data.Data)
             {

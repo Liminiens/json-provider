@@ -127,7 +127,7 @@ type JsonProvider (config : TypeProviderConfig) as this =
         // Create root TP type specifing asm and ns
         let tpType = ProvidedTypeDefinition(asm, ns, typeName, Some typeof<obj>, isErased = false)
 
-        let settings = { RootTypeName = rootTypeName }
+        let settings = { RootTypeName = rootTypeName; NullableTypes = args.[4] :?> bool }
         let sampleType = TypeInference.inferType tokenizedSample.Root tpType settings
         
         let sampleMethod =
@@ -175,14 +175,16 @@ type JsonProvider (config : TypeProviderConfig) as this =
         [ ProvidedStaticParameter("Sample", typeof<string>, parameterDefaultValue = String.Empty); 
           ProvidedStaticParameter("RootTypeName", typeof<string>, parameterDefaultValue = TypeInference.defaultRootTypeName); 
           ProvidedStaticParameter("Encoding", typeof<string>, parameterDefaultValue = "UTF-8"); 
-          ProvidedStaticParameter("EmbeddedResource", typeof<string>, parameterDefaultValue = String.Empty);]
+          ProvidedStaticParameter("EmbeddedResource", typeof<string>, parameterDefaultValue = String.Empty);
+          ProvidedStaticParameter("NullableValueTypes", typeof<bool>, parameterDefaultValue = false);]
 
     let summaryText = 
         """<summary>A json typed representation</summary>
            <param name='Sample'>Json sample, http url to json resource, relative or absolute path to a file</param>       
            <param name='RootTypeName'>The name to be used for the root type. Defaults to 'Root'.</param>
            <param name='Encoding'>Sample encoding, default is 'UTF-8'</param>
-           <param name='EmbeddedResource'>Embedded resource which will be used as sample. Example: "MyLib, resource.json"</param>"""
+           <param name='EmbeddedResource'>Embedded resource which will be used as sample. Example: "MyLib, resource.json"</param>
+           <param name='NullableValueTypes'>Make value types nullable</param>"""
 
     let generatedType =
         let providedType = ProvidedTypeDefinition(execAsm, ns, providerTypeName, baseType = Some typeof<obj>, isErased = false)

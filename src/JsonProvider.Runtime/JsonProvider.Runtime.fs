@@ -10,9 +10,9 @@ type ``Asm marker``() =
 
 // Put any utility helpers here
 module Json = 
-    let deserialize (json: string) (typ: Type) = 
-        //https://github.com/JamesNK/Newtonsoft.Json/issues/862
+    let inline deserialize (json: string) (typ: Type) = 
         let settings = new JsonSerializerSettings()
+        //https://github.com/JamesNK/Newtonsoft.Json/issues/862
         settings.DateParseHandling <- DateParseHandling.None
         JsonConvert.DeserializeObject(json, typ, settings)
 

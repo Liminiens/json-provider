@@ -9,8 +9,8 @@ nuget Newtonsoft.Json >= 11
 nuget NETStandard.Library.NETFramework
 
 # This lines are used by Paket to get the latest version of the Type Provider SDK files
-github fsprojects/FSharp.TypeProviders.SDK src/ProvidedTypes.fsi
-github fsprojects/FSharp.TypeProviders.SDK src/ProvidedTypes.fs
+github fsprojects/FSharp.TypeProviders.SDK:4c8d754453da9761a62e360b739e36bacc2a38f8 src/ProvidedTypes.fsi
+github fsprojects/FSharp.TypeProviders.SDK:4c8d754453da9761a62e360b739e36bacc2a38f8 src/ProvidedTypes.fs
 
 group Test
   source https://nuget.org/api/v2
@@ -25,3 +25,9 @@ group Example
   source https://nuget.org/api/v2
 
   nuget FSharp.Data.JsonProvider >= 0.4 prerelease
+
+group NukeBuild
+  source https://api.nuget.org/v3/index.json
+ 
+  nuget GitVersion.CommandLine.DotNetCore
+  nuget Nuke.Common

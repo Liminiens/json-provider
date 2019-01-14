@@ -10,6 +10,7 @@
   </PropertyGroup>
   <Import Project="Sdk.targets" Sdk="Microsoft.NET.Sdk" />
   <ItemGroup>
+    <Compile Include="AssemblyInfo.fs" />
     <Compile Include="..\..\paket-files\fsprojects\FSharp.TypeProviders.SDK\src\ProvidedTypes.fsi">
       <Paket>True</Paket>
       <Link>paket-files/ProvidedTypes.fsi</Link>
@@ -18,7 +19,6 @@
       <Paket>True</Paket>
       <Link>paket-files/ProvidedTypes.fs</Link>
     </Compile>
-    <Compile Include="AssemblyInfo.fs" />
     <Compile Include="JsonProvider.Runtime.fs" />
     <None Include="paket.references" />
   </ItemGroup>
