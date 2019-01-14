@@ -17,6 +17,10 @@ module internal Sample =
     open System.Net
     open TypeInference
 
+    type ResourceType =
+        | File of path: string
+        | Other
+
     let (|RelativeFileResource|FileResource|WebResource|Json|) (sample: string, ctx: Context) =     
         let invalidPathChars = Path.GetInvalidPathChars()
         let isValidPath =
@@ -51,27 +55,22 @@ module internal Sample =
 
             match (sample, ctx) with
             | WebResource ->
-                let res = (fun () -> download sample :> obj, TimeSpan.FromMinutes(5.0))
-                res |> Cache.Add
+                (Other, download sample)
             | RelativeFileResource ->
                 let file = ctx.GetRelativeFilePath sample
-                readFile file
+                (File file, readFile file)
             | FileResource ->
-                readFile sample
+                (File sample, readFile sample)
             | Json ->
-                sample
-
-        match resource with
-        | Some(resource) -> 
+                (Other, sample)
+        resource
+        |> Option.bind (fun resource -> 
             Logging.log <| sprintf "Looking for resource: %s" resource
-            match ctx.ReadResource(resource, encoding) with
-            | Some(sample) ->
-                Logging.log <| sprintf "Returning from resource: %s" sample
-                sample
-            | None ->
-                load()
-        | None ->
-                load()        
+            ctx.ReadResource(resource, encoding))
+        |> Option.map (fun sample -> 
+            Logging.log <| sprintf "Returning from resource: %s" sample
+            (Other, sample))
+        |> Option.defaultValue (load())      
             
     let parse (sample: string): JToken =
         let sample = sample.Trim()
@@ -103,7 +102,7 @@ module internal Sample =
             
 [<TypeProvider>]
 type JsonProvider (config : TypeProviderConfig) as this =
-    inherit TypeProviderForNamespaces (config, assemblyReplacementMap=[("JsonProvider.DesignTime", "JsonProvider.Runtime")], addDefaultProbingLocation=true)
+    inherit DisposableTypeProviderForNamespaces (config, assemblyReplacementMap=[("JsonProvider.DesignTime", "JsonProvider.Runtime")])
     
     let providerTypeName = "JsonProvider"
     let ns = "FSharp.Data.JsonProvider"

@@ -9,11 +9,10 @@ open ProviderImplementation.ProvidedTypes
 open System
 open System.IO
 open System.Text
+open System.Collections.Generic
 
 [<AutoOpen>]
 module internal TypeProviderHelpers =
-    open System.Collections.Generic
-
     let prettyName (name: string) =
         let mutable fx = Char.ToUpper
         String 
@@ -145,3 +144,44 @@ type internal Context(tp: TypeProviderForNamespaces, resolutionFolder: string) =
                 None
         | _ -> 
             None
+
+type DisposableTypeProviderForNamespaces(config, ?assemblyReplacementMap) as x =
+    inherit TypeProviderForNamespaces(config, ?assemblyReplacementMap=assemblyReplacementMap, addDefaultProbingLocation=true)
+   
+    let disposeActions = ResizeArray()
+   
+    static let mutable idCount = 0
+   
+    let id = idCount
+    let filesToWatch = Dictionary<string, string>()
+ 
+    do idCount <- idCount + 1
+   
+    let dispose typeNameOpt = 
+        lock disposeActions <| fun () -> 
+            for i = disposeActions.Count-1 downto 0 do
+                let disposeAction = disposeActions.[i]
+                let discard = disposeAction typeNameOpt
+                if discard then
+                    disposeActions.RemoveAt(i)
+ 
+    do x.Disposing.Add <| fun _ -> dispose None
+ 
+    member __.Id = id
+ 
+    member __.SetFileToWatch(fullTypeName, path) =
+        lock filesToWatch <| fun () -> 
+            filesToWatch.[fullTypeName] <- path
+ 
+    member __.GetFileToWath(fullTypeName) =
+        lock filesToWatch <| fun () -> 
+            match filesToWatch.TryGetValue(fullTypeName) with
+            | true, path -> Some path
+            | _ -> None
+ 
+    member __.AddDisposeAction action = 
+        lock disposeActions <| fun () -> disposeActions.Add action
+ 
+    member __.InvalidateOneType typeName = 
+        dispose (Some typeName)
+        base.Invalidate()
