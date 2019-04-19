@@ -9,11 +9,9 @@ open ProviderImplementation.ProvidedTypes
 open System
 open System.IO
 open System.Text
+open System.Collections.Generic
 
-[<AutoOpen>]
 module internal TypeProviderHelpers =
-    open System.Collections.Generic
-
     let prettyName (name: string) =
         let mutable fx = Char.ToUpper
         String 
@@ -83,39 +81,6 @@ module internal TypeProviderHelpers =
         else
             ty
 
-[<AutoOpen>]
-module Utility = 
-    open System.Globalization
-
-    let readStream (encoding: Encoding) (stream: Stream) =    
-        use reader = new StreamReader(stream, encoding)
-        reader.ReadToEnd()
-
-    let tryFirst (parameter: 'T) (actions: list<'T -> 'TResult>) =
-        let rec tryExecute actionsToTry lastErrorMsg =
-            match actionsToTry with
-            | action :: tail ->
-                try
-                    Ok(action parameter)
-                with
-                | :? Exception as e -> 
-                    tryExecute tail e.Message
-            | [] ->
-               Error(lastErrorMsg)
-        tryExecute actions String.Empty
-    
-    type BoolParseResult =
-        | BoolValue of bool
-        | NotBoolValue
-        | NullValue
-
-    let stringToBool (str: string) = 
-        let str = str.ToLower(CultureInfo.InvariantCulture).Trim()
-        if String.IsNullOrWhiteSpace(str) then NullValue
-        elif str = "false" then BoolValue(false)
-        elif str = "true" then BoolValue(true)
-        else NotBoolValue
-
 type internal Context(tp: TypeProviderForNamespaces, resolutionFolder: string) =
 
     member __.ResolutionFolder = resolutionFolder
@@ -139,9 +104,56 @@ type internal Context(tp: TypeProviderForNamespaces, resolutionFolder: string) =
                 let name = name.Trim()
                 Logging.log <| sprintf "Found assembly for resource: %s" asm.FullName
                 asm.GetManifestResourceStream(sprintf "%s.%s" asmName name) 
-                |> readStream encoding
+                |> Helpers.readStream encoding
                 |> Some
             | _ -> 
                 None
         | _ -> 
             None
+
+type DisposableTypeProviderForNamespaces(config, ?assemblyReplacementMap) as x =
+    inherit TypeProviderForNamespaces(config, ?assemblyReplacementMap=assemblyReplacementMap)
+  
+    let disposeActions = ResizeArray()
+  
+    static let mutable idCount = 0
+  
+    let id = idCount
+    let filesToWatch = Dictionary()
+
+    do idCount <- idCount + 1
+  
+    let dispose typeNameOpt = 
+        lock disposeActions <| fun () -> 
+            for i = disposeActions.Count-1 downto 0 do
+                let disposeAction = disposeActions.[i]
+                let discard = disposeAction typeNameOpt
+                if discard then
+                    disposeActions.RemoveAt(i)
+
+    do
+        Logging.log (sprintf "Creating TypeProviderForNamespaces %O [%d]" x id)
+        x.Disposing.Add <| fun _ -> 
+            Logging.log (sprintf "DisposingEvent %O [%d]" x id)
+            dispose None
+
+    member __.Id = id
+
+    member __.SetFileToWatch(fullTypeName, path) =
+        lock filesToWatch <| fun () -> 
+            filesToWatch.[fullTypeName] <- path
+
+    member __.GetFileToWatch(fullTypeName) =
+        lock filesToWatch <| fun () -> 
+            match filesToWatch.TryGetValue(fullTypeName) with
+            | true, path -> Some path
+            | _ -> None
+
+    member __.AddDisposeAction action = 
+        lock disposeActions <| fun () -> disposeActions.Add action
+
+    member __.InvalidateOneType typeName = 
+        Logging.log (sprintf "InvalidateOneType %s in %O [%d]" typeName x id)
+        dispose (Some typeName)
+        Logging.log (sprintf "Calling invalidate for %O [%d]" x id)
+        base.Invalidate()

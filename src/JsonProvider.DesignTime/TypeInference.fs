@@ -10,6 +10,8 @@ module internal TypeInference =
     open System.Globalization
     open System.Threading
     open System.Collections.Generic
+    open TypeProviderHelpers
+    open Helpers
   
     type JsonValue =
         | String of string
@@ -212,7 +214,7 @@ module internal TypeInference =
                         Logging.log <| sprintf "Object type name: %s" typeName
                         createTypeDefinition typeName
                 Logging.log <| sprintf "Object type full name: %s" generatedType.FullName
-
+                
                 jObject
                 |> Seq.iter (fun prop -> processToken prop (Some(generatedType)) |> ignore)
 
@@ -231,7 +233,6 @@ module internal TypeInference =
                     typeof<decimal> |> preprocessType
                 | String(_) | Null ->
                     typeof<string>
-
         and processArrayToken (jArray: JArray) generatedType =                     
             let tokens =
                 jArray 

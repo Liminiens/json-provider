@@ -36,7 +36,7 @@ Paket is used to acquire the type provider SDK and build the nuget package.
 
 Build:
 
-    .\build.ps1 --target Build --Configuration Release
+    .\build.ps1 --target Compile --Configuration Release
 
 Pack:
 

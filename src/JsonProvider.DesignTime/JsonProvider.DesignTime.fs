@@ -1,6 +1,7 @@
 module JsonProviderImplementation
 #nowarn "0025"
-
+open FSharp.Data.JsonProvider
+open System
 open System.Linq
 open System.IO
 open System.Text
@@ -16,7 +17,11 @@ module internal Sample =
     open System.Net
     open TypeInference
 
-    let (|RelativeFileResource|FileResource|WebResource|Json|) (sample: string, ctx: Context) =     
+    type ResourceType =
+        | FileResource of path: string
+        | OtherResource
+
+    let (|IsRelativeFileResource|IsFileResource|IsWebResource|IsJson|) (sample: string, ctx: Context) =     
         let invalidPathChars = Path.GetInvalidPathChars()
         let isValidPath =
             sample 
@@ -24,47 +29,48 @@ module internal Sample =
             |> Option.isNone
 
         if sample.StartsWith("http") then
-           WebResource
+           IsWebResource
         elif sample.StartsWith("{") || sample.StartsWith("[") then
-           Json
+           IsJson
         elif isValidPath && File.Exists(ctx.GetRelativeFilePath sample) then
-           RelativeFileResource
+           IsRelativeFileResource
         elif isValidPath && File.Exists(sample) then
-           FileResource
+           IsFileResource
         else
-           Json
+           IsJson
 
     let load (encoding: Encoding) (ctx: Context) (sample: string) (resource: string option) = 
         let load() = 
             let sample = sample.Trim()
+
             let readFile file = 
                 if File.Exists(file) then
-                    File.OpenRead(file) |> readStream encoding
+                    File.OpenRead(file) |> Helpers.readStream encoding
                 else
                     invalidArg "sample" <| sprintf """Couldn't find file \"%s\" """ file
-            match (sample, ctx) with
-            | WebResource ->
-                let response = WebRequest.Create(sample).GetResponse()
-                response.GetResponseStream() |> readStream encoding
-            | RelativeFileResource ->
-                let file = ctx.GetRelativeFilePath sample
-                readFile file
-            | FileResource ->
-                readFile sample
-            | Json ->
-                sample
 
-        match resource with
-        | Some(resource) -> 
+            let download (source: string) = 
+                let response = WebRequest.Create(source).GetResponse()
+                response.GetResponseStream() |> Helpers.readStream encoding
+
+            match (sample, ctx) with
+            | IsWebResource ->
+                (OtherResource, download sample)
+            | IsRelativeFileResource ->
+                let file = ctx.GetRelativeFilePath sample
+                (FileResource file, readFile file)
+            | IsFileResource ->
+                (FileResource sample, readFile sample)
+            | IsJson ->
+                (OtherResource, sample)
+        resource
+        |> Option.bind (fun resource -> 
             Logging.log <| sprintf "Looking for resource: %s" resource
-            match ctx.ReadResource(resource, encoding) with
-            | Some(sample) ->
-                Logging.log <| sprintf "Returning from resource: %s" sample
-                sample
-            | None ->
-                load()
-        | None ->
-                load()        
+            ctx.ReadResource(resource, encoding))
+        |> Option.map (fun sample -> 
+            Logging.log <| sprintf "Returning from resource: %s" sample
+            (OtherResource, sample))
+        |> Option.defaultValue (load())      
             
     let parse (sample: string): JToken =
         let sample = sample.Trim()
@@ -72,7 +78,7 @@ module internal Sample =
         let parseAsJArray str = JArray.Parse(str) :> JToken
         let parseAsJValue str = JValue.Parse(str)
 
-        match tryFirst sample [parseAsJObject; parseAsJArray; parseAsJValue] with
+        match Helpers.tryFirst sample [parseAsJObject; parseAsJArray; parseAsJValue] with
         | Ok(token) ->
             token
         | Error(message) ->
@@ -92,11 +98,12 @@ module internal Sample =
             <@@ value @@>
         | _ ->
             <@@ Json.deserialize sample sampleType @@>
-            
+
+open Sample
             
 [<TypeProvider>]
 type JsonProvider (config : TypeProviderConfig) as this =
-    inherit TypeProviderForNamespaces (config, assemblyReplacementMap=[("JsonProvider.DesignTime", "JsonProvider.Runtime")], addDefaultProbingLocation=true)
+    inherit DisposableTypeProviderForNamespaces (config, assemblyReplacementMap=[("JsonProvider.DesignTime", "JsonProvider.Runtime")])
     
     let providerTypeName = "JsonProvider"
     let ns = "FSharp.Data.JsonProvider"
@@ -113,7 +120,7 @@ type JsonProvider (config : TypeProviderConfig) as this =
         let resource = args.[3] :?> string |> Option.ofObj 
         let encoding = Encoding.GetEncoding(args.[2] :?> string)
         let rootTypeName = args.[1] :?> string
-        let sample = Sample.load encoding context (args.[0] :?> string) resource
+        let resourceType, sample = Sample.load encoding context (args.[0] :?> string) resource
         let tokenizedSample = Sample.parse sample
 
         let asm = ProvidedAssembly()
@@ -123,6 +130,12 @@ type JsonProvider (config : TypeProviderConfig) as this =
         let settings = { RootTypeName = rootTypeName; NullableTypes = args.[4] :?> bool }
         let sampleType = TypeInference.inferType tokenizedSample.Root tpType settings
         
+        if config.IsInvalidationSupported then
+            match resourceType with
+            | FileResource(path) -> 
+                this.SetFileToWatch(sampleType.ToString(), path)
+            | OtherResource -> ()
+
         let sampleMethod =
             ProvidedMethod(
                 methodName = "GetSampleJson",
