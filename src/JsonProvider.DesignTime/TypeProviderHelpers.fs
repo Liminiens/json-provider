@@ -11,7 +11,6 @@ open System.IO
 open System.Text
 open System.Collections.Generic
 
-[<AutoOpen>]
 module internal TypeProviderHelpers =
     let prettyName (name: string) =
         let mutable fx = Char.ToUpper
@@ -82,39 +81,6 @@ module internal TypeProviderHelpers =
         else
             ty
 
-[<AutoOpen>]
-module Utility = 
-    open System.Globalization
-
-    let readStream (encoding: Encoding) (stream: Stream) =    
-        use reader = new StreamReader(stream, encoding)
-        reader.ReadToEnd()
-
-    let tryFirst (parameter: 'T) (actions: list<'T -> 'TResult>) =
-        let rec tryExecute actionsToTry lastErrorMsg =
-            match actionsToTry with
-            | action :: tail ->
-                try
-                    Ok(action parameter)
-                with
-                | :? Exception as e -> 
-                    tryExecute tail e.Message
-            | [] ->
-               Error(lastErrorMsg)
-        tryExecute actions String.Empty
-    
-    type BoolParseResult =
-        | BoolValue of bool
-        | NotBoolValue
-        | NullValue
-
-    let stringToBool (str: string) = 
-        let str = str.ToLower(CultureInfo.InvariantCulture).Trim()
-        if String.IsNullOrWhiteSpace(str) then NullValue
-        elif str = "false" then BoolValue(false)
-        elif str = "true" then BoolValue(true)
-        else NotBoolValue
-
 type internal Context(tp: TypeProviderForNamespaces, resolutionFolder: string) =
 
     member __.ResolutionFolder = resolutionFolder
@@ -138,26 +104,25 @@ type internal Context(tp: TypeProviderForNamespaces, resolutionFolder: string) =
                 let name = name.Trim()
                 Logging.log <| sprintf "Found assembly for resource: %s" asm.FullName
                 asm.GetManifestResourceStream(sprintf "%s.%s" asmName name) 
-                |> readStream encoding
+                |> Helpers.readStream encoding
                 |> Some
             | _ -> 
                 None
         | _ -> 
             None
 
-//todo: https://github.com/fsharp/FSharp.Data/blob/85ce4eb5460de0bbec568f1a6bdc6b3a91360848/src/CommonProviderImplementation/Helpers.fs
 type DisposableTypeProviderForNamespaces(config, ?assemblyReplacementMap) as x =
-    inherit TypeProviderForNamespaces(config, ?assemblyReplacementMap=assemblyReplacementMap, addDefaultProbingLocation=true)
-   
+    inherit TypeProviderForNamespaces(config, ?assemblyReplacementMap=assemblyReplacementMap)
+  
     let disposeActions = ResizeArray()
-   
+  
     static let mutable idCount = 0
-   
+  
     let id = idCount
-    let filesToWatch = Dictionary<string, string>()
- 
+    let filesToWatch = Dictionary()
+
     do idCount <- idCount + 1
-   
+  
     let dispose typeNameOpt = 
         lock disposeActions <| fun () -> 
             for i = disposeActions.Count-1 downto 0 do
@@ -165,25 +130,30 @@ type DisposableTypeProviderForNamespaces(config, ?assemblyReplacementMap) as x =
                 let discard = disposeAction typeNameOpt
                 if discard then
                     disposeActions.RemoveAt(i)
- 
-    do x.Disposing.Add <| fun _ -> dispose None
- 
+
+    do
+        Logging.log (sprintf "Creating TypeProviderForNamespaces %O [%d]" x id)
+        x.Disposing.Add <| fun _ -> 
+            Logging.log (sprintf "DisposingEvent %O [%d]" x id)
+            dispose None
+
     member __.Id = id
- 
+
     member __.SetFileToWatch(fullTypeName, path) =
         lock filesToWatch <| fun () -> 
-            Logging.log <| sprintf "Added file to cache, file: %s; type: %s" fullTypeName path
             filesToWatch.[fullTypeName] <- path
- 
-    member __.GetFileToWath(fullTypeName) =
+
+    member __.GetFileToWatch(fullTypeName) =
         lock filesToWatch <| fun () -> 
             match filesToWatch.TryGetValue(fullTypeName) with
             | true, path -> Some path
             | _ -> None
- 
+
     member __.AddDisposeAction action = 
         lock disposeActions <| fun () -> disposeActions.Add action
- 
+
     member __.InvalidateOneType typeName = 
+        Logging.log (sprintf "InvalidateOneType %s in %O [%d]" typeName x id)
         dispose (Some typeName)
+        Logging.log (sprintf "Calling invalidate for %O [%d]" x id)
         base.Invalidate()

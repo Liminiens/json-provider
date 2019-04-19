@@ -10,6 +10,8 @@ module internal TypeInference =
     open System.Globalization
     open System.Threading
     open System.Collections.Generic
+    open TypeProviderHelpers
+    open Helpers
   
     type JsonValue =
         | String of string
