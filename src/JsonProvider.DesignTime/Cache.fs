@@ -1,5 +1,5 @@
 ﻿/// Implements caching using in-memory and local file system 
-module internal FSharp.Data.Runtime.Caching
+module FSharp.Data.Runtime.Caching
 
 open System
 open System.Collections.Concurrent
@@ -15,7 +15,7 @@ type ICache<'TKey, 'TValue> =
   abstract Remove : key:'TKey -> unit
 
 /// Creates a cache that uses in-memory collection
-let createInMemoryCache (expiration:TimeSpan) = 
+let createInMemoryCache (expiration: TimeSpan) = 
     let dict = ConcurrentDictionary<'TKey_,'TValue*DateTime>()
     let rec invalidationFunction key = 
         async { 
@@ -24,7 +24,7 @@ let createInMemoryCache (expiration:TimeSpan) =
             | true, (_, timestamp) -> 
                 if DateTime.UtcNow - timestamp >= expiration then
                     match dict.TryRemove(key) with
-                    | true, _ -> Logging.log <| sprintf "Cache expired: %O" key
+                    | true, _ -> Logging.log (sprintf "Cache expired: %O" key)
                     | _ -> ()
                 else
                     do! invalidationFunction key
@@ -43,7 +43,7 @@ let createInMemoryCache (expiration:TimeSpan) =
             | _ -> None
         member __.Remove(key) = 
             match dict.TryRemove(key) with
-            | true, _ ->  Logging.log <| sprintf "Explicitly removed from cache: %O" key
+            | true, _ -> Logging.log (sprintf "Explicitly removed from cache: %O" key)
             | _ -> ()
     }
 
