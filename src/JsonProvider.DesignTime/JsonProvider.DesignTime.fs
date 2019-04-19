@@ -45,13 +45,13 @@ module internal Sample =
 
             let readFile file = 
                 if File.Exists(file) then
-                    File.OpenRead(file) |> readStream encoding
+                    File.OpenRead(file) |> Helpers.readStream encoding
                 else
                     invalidArg "sample" <| sprintf """Couldn't find file \"%s\" """ file
 
             let download (source: string) = 
                 let response = WebRequest.Create(source).GetResponse()
-                response.GetResponseStream() |> readStream encoding
+                response.GetResponseStream() |> Helpers.readStream encoding
 
             match (sample, ctx) with
             | IsWebResource ->
@@ -78,7 +78,7 @@ module internal Sample =
         let parseAsJArray str = JArray.Parse(str) :> JToken
         let parseAsJValue str = JValue.Parse(str)
 
-        match tryFirst sample [parseAsJObject; parseAsJArray; parseAsJValue] with
+        match Helpers.tryFirst sample [parseAsJObject; parseAsJArray; parseAsJValue] with
         | Ok(token) ->
             token
         | Error(message) ->
